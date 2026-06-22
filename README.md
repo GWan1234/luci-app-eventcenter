@@ -1,15 +1,17 @@
 # luci-app-eventcenter
 
-路由器通用事件通知中心 — 监控 OpenClash 配置/GEO 文件变更，通过 Telegram 等通道实时推送通知。
+路由器通用事件通知中心 — 实时监控 OpenClash 订阅配置变更，按订阅名称分组推送 Telegram 通知，包含节点变更分类和地区统计。
 
 ## 功能特性
 
-- **事件引擎**: 标准化事件处理流水线（去重 → 记录 → 格式化 → 推送）
-- **Telegram 通知**: 通过 Bot API 发送 Markdown/HTML 格式通知
-- **OpenClash 监控**: 自动检测配置文件和 GEO 文件变更
-- **Web 管理界面**: LuCI JS 模式，含概览、设置、日志三个页面
-- **去重机制**: MD5 按 source:event 去重，可配 TTL 时间窗口
-- **日志轮转**: 超过 max_lines 自动截断，保留最新记录
+- **实时文件监听**: inotifywait 内核级事件驱动，文件变更秒级感知
+- **按订阅分组**: 每个配置文件 = 一个独立订阅，变更时按订阅名称分别推送
+- **节点变更分类**: ➕新增线路 / ➖下线线路 / 🔄参数更新
+- **地区变化检测**: 🚀新地区上线 / ⚠️地区缩减 / 各地区节点增减统计
+- **Telegram 通知**: 精美 Markdown 格式，包含变更摘要、地区统计、主要变化列表
+- **事件引擎**: 标准化流水线（去重 → 记录 → 格式化 → 推送）
+- **LuCI 管理界面**: 概览、设置、日志三个页面
+- **busybox 兼容**: 无 comm/paste/yq 依赖，纯 shell 实现
 
 ## 目录结构
 
@@ -28,6 +30,7 @@ luci-app-eventcenter/
 │   │   │   ├── eventcenter/
 │   │   │   │   ├── engine.sh         # 事件引擎
 │   │   │   │   ├── utils.sh          # 工具函数库
+│   │   │   │   ├── watcher.sh        # inotifywait 实时监听
 │   │   │   │   └── sources/
 │   │   │   │       └── openclash.sh  # OpenClash 事件源
 │   │   │   ├── rpcd/acl.d/eventcenter.json   # RPC 权限
@@ -57,7 +60,7 @@ make package/luci-app-eventcenter/compile V=s
 ### 方式二：手动安装 ipk
 
 ```bash
-opkg install luci-app-eventcenter_1.0.0-1_all.ipk
+opkg install luci-app-eventcenter_1.2.0-1_all.ipk
 ```
 
 ### 方式三：源码直接部署（开发调试）
@@ -73,6 +76,7 @@ chmod +x /usr/bin/notifier_telegram.sh
 chmod +x /etc/init.d/eventcenter
 chmod +x /usr/share/eventcenter/engine.sh
 chmod +x /usr/share/eventcenter/utils.sh
+chmod +x /usr/share/eventcenter/watcher.sh
 chmod +x /usr/share/eventcenter/sources/openclash.sh
 
 # 重启 rpcd 和 uhttpd
@@ -114,10 +118,10 @@ eventcenter sources
 ### 服务管理
 
 ```bash
-# 启动服务（添加 cron 任务）
+# 启动服务（添加 cron 任务 + inotifywait 监听）
 /etc/init.d/eventcenter start
 
-# 停止服务（移除 cron 任务）
+# 停止服务（移除 cron 任务 + 停止监听）
 /etc/init.d/eventcenter stop
 
 # 重启服务
@@ -134,6 +138,31 @@ logread | grep eventcenter
 - **概览页**: 服务状态、快速操作按钮、最近 10 条事件
 - **设置页**: 全局开关、Telegram 配置、OpenClash 监控配置
 - **日志页**: 完整事件日志、分页浏览、自动刷新
+
+## 通知示例
+
+按订阅名称分组推送的 Telegram 通知格式：
+
+```
+📡 OpenClash 订阅更新 — 我的机场
+
+⏰ 时间: 2026-06-22 15:30:45
+
+📊 变更摘要
+├── ➕ 新增线路: 8 条
+├── ➖ 下线线路: 2 条
+└── 🔄 参数更新: 3 条
+
+🌍 地区统计
+├── 🇭🇰 香港: +5 -1 (共 42 条)
+├── 🇯🇵 日本: +3 +1 (共 28 条)
+├── 🇸🇬 新加坡: +0 -2 (共 15 条)
+└── 🇺🇸 美国: +0 +0 (共 12 条)
+
+📋 主要变化
+➕ 新增: 香港 IPLC 05 · 香港 IPLC 06 · 东京 IIJ 03 ...
+➖ 下线: 新加坡 02 · 新加坡 03
+```
 
 ## UCI 配置说明
 
@@ -155,8 +184,8 @@ config notifier 'telegram'
 config monitor 'openclash'
     option enable '1'              # OpenClash 监控开关
     option paths ''                # 自定义配置路径（逗号分隔，空则自动发现）
-    option interval '5'            # 检查间隔（分钟）
-    option geo_files 'GeoIP.dat,GeoSite.dat,Country.mmdb,ASN.mmdb'
+    option realtime '1'            # inotifywait 实时监听开关
+    option debounce '5'            # 防抖延迟（秒）
 ```
 
 ## 扩展事件源
@@ -182,8 +211,22 @@ check() {
 
 - `curl` — Telegram API 调用
 - `md5sum` — 去重 key 计算（busybox 自带）
+- `inotifywait` — 实时文件监听（inotify-tools 包）
 
 ## 版本历史
+
+- **v1.2.0** (2026-06-22) — 按订阅名称分组推送
+  - 每个配置文件视为独立订阅，变更时按订阅名称分别推送通知
+  - 通知标题显示订阅名称，便于区分不同来源的变更
+  - 优化 inotifywait 监听逻辑，支持多文件并行监听
+
+- **v1.1.0** (2026-06-22) — 节点变更分类 + 通知模板优化
+  - 节点变更智能分类：新增线路 / 下线线路 / 参数更新
+  - 地区变化检测：新地区上线 / 地区缩减 / 各地区节点增减统计
+  - Telegram 通知模板重构，包含变更摘要、地区统计、主要变化列表
+  - 新增 inotifywait 实时文件监听，替代轮询模式
+  - 新增 watcher.sh 实时监听模块
+  - 移除 geo_files 和 interval 配置项，改用 realtime + debounce
 
 - **v1.0.0** (2026-06-21) — 初始版本
   - 事件引擎 + CLI
