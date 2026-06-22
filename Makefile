@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-eventcenter
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.0.3
 PKG_RELEASE:=1
 
 LUCI_TITLE:=Event Center - 通用事件通知中心
