@@ -114,10 +114,15 @@ return view.extend({
 		o.default = '1';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'debounce', '防抖延迟(秒)',
+		o = s.option(form.ListValue, 'debounce', '防抖延迟',
 			'配置变更后等待多久再触发检查，防止批量更新重复触发');
+		o.value('3', '3 秒');
+		o.value('5', '5 秒');
+		o.value('10', '10 秒');
+		o.value('15', '15 秒');
+		o.value('30', '30 秒');
+		o.value('60', '60 秒');
 		o.default = '5';
-		o.datatype = 'uinteger';
 		o.rmempty = false;
 		o.depends('realtime', '1');
 
@@ -125,6 +130,44 @@ return view.extend({
 			'OpenClash 配置文件路径，逗号分隔。留空自动监听 /etc/openclash/config/');
 		o.rmempty = true;
 		o.placeholder = '/etc/openclash/config';
+
+		// --- Node Health Monitor ---
+		s = m.section(form.NamedSection, 'health', 'health', '节点故障转移通知');
+		s.addremove = false;
+		s.anonymous = false;
+
+		o = s.option(form.Flag, 'enable', '启用',
+			'监测代理组节点切换，故障转移时发送 Telegram 通知');
+		o.default = '0';
+		o.rmempty = false;
+
+		o = s.option(form.ListValue, 'interval', '检测间隔',
+			'读取 Clash API 检测节点切换的间隔');
+		o.value('1', '1 分钟');
+		o.value('2', '2 分钟');
+		o.value('3', '3 分钟');
+		o.value('5', '5 分钟');
+		o.value('10', '10 分钟');
+		o.value('15', '15 分钟');
+		o.value('30', '30 分钟');
+		o.value('60', '1 小时');
+		o.default = '5';
+		o.rmempty = false;
+
+		o = s.option(form.ListValue, 'delay_threshold', '延迟阈值',
+			'原节点延迟超过此值判定为不可达（故障转移），低于此值认为是手动切换不通知');
+		o.value('1000', '1 秒');
+		o.value('2000', '2 秒');
+		o.value('3000', '3 秒 (推荐)');
+		o.value('5000', '5 秒');
+		o.value('10000', '10 秒');
+		o.default = '3000';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'test_url', '测试URL',
+			'用于检测节点延迟的测试地址');
+		o.default = 'http://www.gstatic.com/generate_204';
+		o.rmempty = false;
 
 		return m.render();
 	}
