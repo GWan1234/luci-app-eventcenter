@@ -64,6 +64,28 @@ region_emoji() {
     esac
 }
 
+# prepend_flag <node_name>
+# Adds a flag emoji prefix if the name doesn't already start with one
+prepend_flag() {
+    local _name="$1"
+    # Check if name already starts with a flag emoji (regional indicator range U+1F1E6..U+1F1FF)
+    case "$_name" in
+        🇦*|🇧*|🇨*|🇩*|🇪*|🇫*|🇬*|🇭*|🇮*|🇯*|🇰*|🇱*|🇲*|🇳*|🇴*|🇵*|🇶*|🇷*|🇸*|🇹*|🇺*|🇻*|🇼*|🇽*|🇾*|🇿*)
+            echo "$_name"
+            return
+            ;;
+    esac
+    local _r
+    _r=$(detect_region "$_name")
+    if [ -n "$_r" ]; then
+        local _emoji
+        _emoji=$(region_emoji "$_r")
+        echo "${_emoji} ${_name}"
+    else
+        echo "$_name"
+    fi
+}
+
 # build_notification <title> <old_total> <new_total> <added_count> <removed_count> <modified_count> <region_lines> <new_regions> <gone_regions> <added_list> <removed_list> <modified_list>
 # Builds the formatted Telegram message using awk
 build_notification() {
@@ -276,11 +298,20 @@ check_subscription() {
         local _regions_gone=""
         [ -s "$_tmp_oldr" ] && _regions_gone=$(grep -vxFf "$_tmp_newr" "$_tmp_oldr" 2>/dev/null)
 
-        # Build change lists
+        # Build change lists (prepend flag emoji for names without one)
         local _added_list _removed_list _modified_list
-        _added_list=$(head -5 "$_tmp_added" 2>/dev/null | awk '{printf "  + %s\n", $0}')
-        _removed_list=$(head -5 "$_tmp_removed" 2>/dev/null | awk '{printf "  - %s\n", $0}')
-        _modified_list=$(head -5 "$_tmp_modified" 2>/dev/null | awk '{printf "  ~ %s\n", $0}')
+        _added_list=$(head -5 "$_tmp_added" 2>/dev/null | while IFS= read -r _n; do
+            [ -z "$_n" ] && continue
+            printf "  + %s\n" "$(prepend_flag "$_n")"
+        done)
+        _removed_list=$(head -5 "$_tmp_removed" 2>/dev/null | while IFS= read -r _n; do
+            [ -z "$_n" ] && continue
+            printf "  - %s\n" "$(prepend_flag "$_n")"
+        done)
+        _modified_list=$(head -5 "$_tmp_modified" 2>/dev/null | while IFS= read -r _n; do
+            [ -z "$_n" ] && continue
+            printf "  ~ %s\n" "$(prepend_flag "$_n")"
+        done)
 
         # Generate and send notification
         local _msg
