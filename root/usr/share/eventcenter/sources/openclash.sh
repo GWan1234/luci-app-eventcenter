@@ -2,8 +2,122 @@
 # Event Center - OpenClash Event Source
 # Monitors OpenClash subscription configs per-subscription
 # Each config file = one subscription, separate notifications
+# Supports: Clash YAML, SIP008 JSON, Base64 node lists
 
-# extract_node_names <file>
+# --- Format detection and parsing ---
+
+# detect_file_format <file>
+# Returns: "sip008", "clash_yaml", "base64", or "unknown"
+detect_file_format() {
+    local _file="$1"
+    # Read first non-empty line
+    local _first
+    _first=$(head -20 "$_file" 2>/dev/null | grep -m1 '[^[:space:]]')
+
+    # SIP008 JSON: starts with { or [
+    case "$_first" in
+        \{*|\[*)
+            # Verify it's actually SIP008 (has "server" field)
+            if grep -q '"server"' "$_file" 2>/dev/null; then
+                echo "sip008"
+                return
+            fi
+            echo "unknown"
+            return
+            ;;
+    esac
+
+    # Clash YAML: has "proxies:" section
+    if grep -q '^[[:space:]]*proxies:' "$_file" 2>/dev/null; then
+        echo "clash_yaml"
+        return
+    fi
+
+    # Base64: check if first line is valid base64
+    local _decoded
+    _decoded=$(echo "$_first" | base64 -d 2>/dev/null)
+    if [ -n "$_decoded" ] && echo "$_decoded" | grep -q '://'; then
+        echo "base64"
+        return
+    fi
+
+    echo "unknown"
+}
+
+# parse_sip008 <file>
+# Parses SIP008 JSON format, outputs: name\tserver:port
+parse_sip008() {
+    local _file="$1"
+    # SIP008 is a JSON array of proxy objects
+    # Fields: name, server, port, type/cipher, password
+    # Use sed/awk to extract since we don't have jq on OpenWrt
+    sed 's/},{/}\n{/g' "$_file" 2>/dev/null | while IFS= read -r _obj; do
+        local _name _server _port
+        _name=$(echo "$_obj" | grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"name"[[:space:]]*:[[:space:]]*"//;s/"$//')
+        _server=$(echo "$_obj" | grep -o '"server"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"server"[[:space:]]*:[[:space:]]*"//;s/"$//')
+        _port=$(echo "$_obj" | grep -o '"port"[[:space:]]*:[[:space:]]*[0-9]*' | head -1 | grep -o '[0-9]*$')
+
+        # Skip if no name or empty
+        [ -z "$_name" ] && continue
+        # Filter info nodes
+        case "$_name" in
+            *剩余*|*到期*|*套餐*|*距离*|*故障*|*充值*|*流量*|*重置*|*过期*|*expire*|*traffic*|*reset*|*servername*) continue ;;
+        esac
+
+        local _key="${_server}:${_port}"
+        [ "$_key" = ":" ] && _key="unknown"
+        printf '%s\t%s\n' "$_name" "$_key"
+    done
+}
+
+# parse_base64_list <file>
+# Parses base64-encoded node list (one node://xxx per line after decode)
+parse_base64_list() {
+    local _file="$1"
+    base64 -d "$_file" 2>/dev/null | while IFS= read -r _line; do
+        [ -z "$_line" ] && continue
+        # Extract name from URI fragment (#name) or use the protocol
+        local _name
+        _name=$(echo "$_line" | sed 's/.*#//;s/%[0-9A-Fa-f][0-9A-Fa-f]/ /g' | head -c 100)
+        [ -z "$_name" ] && _name=$(echo "$_line" | cut -d: -f1)
+        # Filter info nodes
+        case "$_name" in
+            *剩余*|*到期*|*套餐*|*距离*|*故障*|*充值*|*流量*|*重置*|*过期*|*expire*|*traffic*|*reset*|*servername*) continue ;;
+        esac
+        [ -n "$_name" ] && printf '%s\tunknown\n' "$_name"
+    done
+}
+
+# extract_node_names_multi <file>
+# Auto-detects format and extracts node names
+# Outputs: name\tserver:port (tab-separated)
+extract_node_names_multi() {
+    local _file="$1"
+    local _format
+    _format=$(detect_file_format "$_file")
+
+    case "$_format" in
+        sip008)
+            parse_sip008 "$_file"
+            ;;
+        clash_yaml)
+            extract_node_names "$_file" | while IFS= read -r _name; do
+                printf '%s\tunknown\n' "$_name"
+            done
+            ;;
+        base64)
+            parse_base64_list "$_file"
+            ;;
+        *)
+            # Fallback: try YAML parser
+            extract_node_names "$_file" | while IFS= read -r _name; do
+                printf '%s\tunknown\n' "$_name"
+            done
+            ;;
+    esac
+}
+
+# extract_node_names <file> (legacy YAML parser)
 extract_node_names() {
     local _file="$1"
     awk '
@@ -185,23 +299,7 @@ check_subscription() {
 
     while IFS= read -r _pf; do
         [ -z "$_pf" ] || [ ! -f "$_pf" ] && continue
-        awk '
-            /^proxies:/ { in_p=1; next }
-            /^(proxy-groups|rules):/ { in_p=0 }
-            in_p && /name:/ {
-                line=$0; sub(/.*name:[[:space:]]*/, "", line); sub(/,.*/, "", line); gsub(/[\047"]/, "", line)
-                if (line ~ /(剩余|到期|套餐|距离|故障|充值|流量|重置|过期|expire|traffic|reset|servername)/ || line == "") next
-                server=""; port=""
-                n=split($0, fields, ",")
-                for (i=1; i<=n; i++) {
-                    gsub(/^[[:space:]]+/, "", fields[i])
-                    if (fields[i] ~ /^server:/) { sub(/.*server:[[:space:]]*/, "", fields[i]); server=fields[i] }
-                    if (fields[i] ~ /^port:/) { sub(/.*port:[[:space:]]*/, "", fields[i]); port=fields[i] }
-                }
-                key = server ":" port; if (key == ":") key = "unknown"
-                print line "\t" key
-            }
-        ' "$_pf" 2>/dev/null >> "$_tmp_current"
+        extract_node_names_multi "$_pf" 2>/dev/null >> "$_tmp_current"
     done < "$_tmp_providers"
 
     local _current_total

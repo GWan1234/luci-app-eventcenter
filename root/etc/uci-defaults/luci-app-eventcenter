@@ -17,11 +17,30 @@ if [ ! -f /etc/config/eventcenter ]; then
         set eventcenter.telegram.chatid=''
         set eventcenter.telegram.parse_mode='Markdown'
 
+        set eventcenter.wechat=notifier
+        set eventcenter.wechat.enable='0'
+        set eventcenter.wechat.webhook=''
+        set eventcenter.wechat.mention=''
+
+        set eventcenter.bark=notifier
+        set eventcenter.bark.enable='0'
+        set eventcenter.bark.server='https://api.day.app'
+        set eventcenter.bark.device_key=''
+        set eventcenter.bark.sound='minuet'
+        set eventcenter.bark.group='EventCenter'
+
+        set eventcenter.pushplus=notifier
+        set eventcenter.pushplus.enable='0'
+        set eventcenter.pushplus.token=''
+        set eventcenter.pushplus.topic=''
+        set eventcenter.pushplus.template='markdown'
+
         set eventcenter.openclash=monitor
         set eventcenter.openclash.enable='1'
         set eventcenter.openclash.paths=''
         set eventcenter.openclash.realtime='1'
         set eventcenter.openclash.debounce='5'
+        set eventcenter.openclash.interval='5'
 
         set eventcenter.node_health=health
         set eventcenter.node_health.enable='0'
@@ -32,4 +51,42 @@ if [ ! -f /etc/config/eventcenter ]; then
         set eventcenter.node_health.monitor_groups=''
         commit eventcenter
 EOUCI
+fi
+
+# Ensure new sections exist for upgrades (won't overwrite existing)
+ensure_section() {
+    local _type="$1" _name="$2"
+    shift 2
+    if ! uci -q get "eventcenter.${_name}" >/dev/null 2>&1; then
+        uci -q set "eventcenter.${_name}=${_type}"
+        while [ $# -gt 0 ]; do
+            uci -q set "eventcenter.${_name}.${1}=${2}"
+            shift 2
+        done
+        uci -q commit eventcenter
+    fi
+}
+
+ensure_section notifier wechat \
+    enable '0' \
+    webhook '' \
+    mention ''
+
+ensure_section notifier bark \
+    enable '0' \
+    server 'https://api.day.app' \
+    device_key '' \
+    sound 'minuet' \
+    group 'EventCenter'
+
+ensure_section notifier pushplus \
+    enable '0' \
+    token '' \
+    topic '' \
+    template 'markdown'
+
+# Ensure interval exists on monitor section
+if ! uci -q get eventcenter.@monitor[0].interval >/dev/null 2>&1; then
+    uci -q set eventcenter.@monitor[0].interval='5'
+    uci -q commit eventcenter
 fi

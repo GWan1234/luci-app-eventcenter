@@ -12,13 +12,16 @@ start_service() {
     enable=$(uci -q get eventcenter.global.enable)
     [ "$enable" != "1" ] && return
 
-    # --- Cron job setup ---
+    # --- OpenClash cron job setup ---
     local interval
-    interval=$(uci -q get eventcenter.@monitor[0].interval || echo "5")
+    interval=$(uci -q get eventcenter.@monitor[0].interval 2>/dev/null)
     [ -z "$interval" ] && interval=5
 
     local cron_expr
-    if [ "$interval" -ge 60 ] 2>/dev/null && [ $(( interval % 60 )) -eq 0 ] 2>/dev/null; then
+    if [ "$interval" -ge 1440 ] 2>/dev/null && [ $(( interval % 1440 )) -eq 0 ] 2>/dev/null; then
+        local days=$(( interval / 1440 ))
+        cron_expr="0 0 */${days} * *"
+    elif [ "$interval" -ge 60 ] 2>/dev/null && [ $(( interval % 60 )) -eq 0 ] 2>/dev/null; then
         local hours=$(( interval / 60 ))
         cron_expr="0 */${hours} * * *"
     else
@@ -28,27 +31,31 @@ start_service() {
     # Always update (remove old, add new)
     sed -i '/eventcenter_check_openclash/d' /etc/crontabs/root 2>/dev/null
     echo "${cron_expr} /usr/bin/eventcenter check openclash" >> /etc/crontabs/root
+    logger -t eventcenter "openclash cron: ${cron_expr} (interval=${interval}min)"
 
     # --- Node health monitoring ---
     local health_enable
     health_enable=$(uci -q get eventcenter.@health[0].enable 2>/dev/null)
+    sed -i '/eventcenter_check_node_health/d' /etc/crontabs/root 2>/dev/null
+
     if [ "$health_enable" = "1" ]; then
         local health_interval
         health_interval=$(uci -q get eventcenter.@health[0].interval 2>/dev/null || echo "5")
         [ -z "$health_interval" ] && health_interval=5
 
         local health_cron
-        if [ "$health_interval" -ge 60 ] 2>/dev/null && [ $(( health_interval % 60 )) -eq 0 ] 2>/dev/null; then
+        if [ "$health_interval" -ge 1440 ] 2>/dev/null && [ $(( health_interval % 1440 )) -eq 0 ] 2>/dev/null; then
+            local health_days=$(( health_interval / 1440 ))
+            health_cron="0 0 */${health_days} * *"
+        elif [ "$health_interval" -ge 60 ] 2>/dev/null && [ $(( health_interval % 60 )) -eq 0 ] 2>/dev/null; then
             local health_hours=$(( health_interval / 60 ))
             health_cron="0 */${health_hours} * * *"
         else
             health_cron="*/${health_interval} * * * *"
         fi
 
-        # Always update (remove old, add new)
-        sed -i '/eventcenter_check_node_health/d' /etc/crontabs/root 2>/dev/null
         echo "${health_cron} /usr/bin/eventcenter check node-health" >> /etc/crontabs/root
-        logger -t eventcenter "node-health monitoring enabled (interval=${health_interval}min)"
+        logger -t eventcenter "node-health cron: ${health_cron} (interval=${health_interval}min)"
     fi
 
     # --- Watcher setup ---
@@ -63,6 +70,9 @@ start_service() {
             logger -t eventcenter "watcher started (realtime mode)"
         fi
     fi
+
+    # Reload cron
+    /etc/init.d/cron restart 2>/dev/null
 
     logger -t eventcenter "service started (interval=${interval}min, realtime=${realtime:-off})"
 }
@@ -82,6 +92,10 @@ stop_service() {
     # Remove cron tasks
     sed -i '/eventcenter_check_openclash/d' /etc/crontabs/root
     sed -i '/eventcenter_check_node_health/d' /etc/crontabs/root
+
+    # Reload cron
+    /etc/init.d/cron restart 2>/dev/null
+
     logger -t eventcenter "service stopped"
 }
 

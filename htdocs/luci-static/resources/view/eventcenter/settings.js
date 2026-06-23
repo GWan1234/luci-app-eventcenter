@@ -5,6 +5,7 @@
 'require uci';
 
 return view.extend({
+
 	load: function() {
 		return Promise.all([
 			uci.load('eventcenter')
@@ -56,7 +57,9 @@ return view.extend({
 		o.datatype = 'uinteger';
 		o.rmempty = false;
 
-		// --- Telegram Notifier ---
+		// ============================================================
+		//  Telegram Notifier
+		// ============================================================
 		s = m.section(form.NamedSection, 'telegram', 'notifier', 'Telegram 通知');
 		s.addremove = false;
 		s.anonymous = false;
@@ -99,7 +102,151 @@ return view.extend({
 			});
 		};
 
-		// --- OpenClash Monitor ---
+		// ============================================================
+		//  WeChat Work Notifier (企业微信)
+		// ============================================================
+		s = m.section(form.NamedSection, 'wechat', 'notifier', '企业微信通知');
+		s.addremove = false;
+		s.anonymous = false;
+
+		o = s.option(form.Flag, 'enable', '启用',
+			'启用企业微信 Webhook 通知');
+		o.default = '0';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'webhook', 'Webhook URL',
+			'企业微信群机器人 Webhook 地址 (https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...)');
+		o.rmempty = true;
+
+		o = s.option(form.Value, 'mention', '@成员',
+			'需要 @ 的成员 Userid，多个用 | 分隔。留空不 @');
+		o.rmempty = true;
+		o.placeholder = 'zhangsan|lisi';
+
+		o = s.option(form.Button, '_test_wechat', '测试企业微信',
+			'发送测试通知');
+		o.inputtitle = '发送测试';
+		o.inputstyle = 'action';
+		o.onclick = function() {
+			var btn = this;
+			btn.textContent = '发送中...';
+			btn.disabled = true;
+			fs.exec('notifier_wechat.sh', ['企业微信测试消息 - Event Center']).then(function() {
+				btn.textContent = '测试已发送!';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			}).catch(function() {
+				btn.textContent = '失败';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			});
+		};
+
+		// ============================================================
+		//  Bark Notifier (iOS Push)
+		// ============================================================
+		s = m.section(form.NamedSection, 'bark', 'notifier', 'Bark 推送 (iOS)');
+		s.addremove = false;
+		s.anonymous = false;
+
+		o = s.option(form.Flag, 'enable', '启用',
+			'启用 Bark 推送通知');
+		o.default = '0';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'server', '服务器地址',
+			'Bark 服务端地址。自建服务填你自己的地址');
+		o.default = 'https://api.day.app';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'device_key', 'Device Key',
+			'Bark App 中的设备 Key');
+		o.rmempty = true;
+
+		o = s.option(form.ListValue, 'sound', '推送铃声',
+			'推送时的铃声');
+		o.value('minuet', 'minuet (默认)');
+		o.value('healthnote', 'healthnote');
+		o.value('alarm', 'alarm');
+		o.value('antic', 'antic');
+		o.value('bell', 'bell');
+		o.value('birdsong', 'birdsong');
+		o.value('bubble', 'bubble');
+		o.value('calypso', 'calypso');
+		o.value('chime', 'chime');
+		o.value('shake', 'shake');
+		o.default = 'minuet';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'group', '消息分组',
+			'Bark 中的消息分组名');
+		o.default = 'EventCenter';
+		o.rmempty = false;
+
+		o = s.option(form.Button, '_test_bark', '测试 Bark',
+			'发送测试通知');
+		o.inputtitle = '发送测试';
+		o.inputstyle = 'action';
+		o.onclick = function() {
+			var btn = this;
+			btn.textContent = '发送中...';
+			btn.disabled = true;
+			fs.exec('notifier_bark.sh', ['Bark 测试消息 - Event Center']).then(function() {
+				btn.textContent = '测试已发送!';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			}).catch(function() {
+				btn.textContent = '失败';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			});
+		};
+
+		// ============================================================
+		//  PushPlus Notifier (微信推送)
+		// ============================================================
+		s = m.section(form.NamedSection, 'pushplus', 'notifier', 'PushPlus 推送 (微信)');
+		s.addremove = false;
+		s.anonymous = false;
+
+		o = s.option(form.Flag, 'enable', '启用',
+			'启用 PushPlus 微信推送');
+		o.default = '0';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'token', 'Token',
+			'PushPlus 推送 Token (在 pushplus.plus 获取)');
+		o.password = true;
+		o.rmempty = true;
+
+		o = s.option(form.Value, 'topic', '群组编码',
+			'一对多推送的群组编码，留空为一对一推送');
+		o.rmempty = true;
+
+		o = s.option(form.ListValue, 'template', '消息模板',
+			'消息内容格式');
+		o.value('markdown', 'Markdown');
+		o.value('html', 'HTML');
+		o.value('txt', '纯文本');
+		o.default = 'markdown';
+		o.rmempty = false;
+
+		o = s.option(form.Button, '_test_pushplus', '测试 PushPlus',
+			'发送测试通知');
+		o.inputtitle = '发送测试';
+		o.inputstyle = 'action';
+		o.onclick = function() {
+			var btn = this;
+			btn.textContent = '发送中...';
+			btn.disabled = true;
+			fs.exec('notifier_pushplus.sh', ['PushPlus 测试消息 - Event Center']).then(function() {
+				btn.textContent = '测试已发送!';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			}).catch(function() {
+				btn.textContent = '失败';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			});
+		};
+
+		// ============================================================
+		//  OpenClash Monitor (with cron interval)
+		// ============================================================
 		s = m.section(form.NamedSection, 'openclash', 'monitor', 'OpenClash 订阅监控');
 		s.addremove = false;
 		s.anonymous = false;
@@ -107,6 +254,23 @@ return view.extend({
 		o = s.option(form.Flag, 'enable', '启用',
 			'启用 OpenClash 订阅配置变更监控');
 		o.default = '1';
+		o.rmempty = false;
+
+		o = s.option(form.ListValue, 'interval', '检查间隔',
+			'定期检查订阅变化的时间间隔');
+		o.value('1', '1 分钟');
+		o.value('2', '2 分钟');
+		o.value('3', '3 分钟');
+		o.value('5', '5 分钟');
+		o.value('10', '10 分钟');
+		o.value('15', '15 分钟');
+		o.value('30', '30 分钟');
+		o.value('60', '1 小时');
+		o.value('120', '2 小时');
+		o.value('360', '6 小时');
+		o.value('720', '12 小时');
+		o.value('1440', '24 小时');
+		o.default = '5';
 		o.rmempty = false;
 
 		o = s.option(form.Flag, 'realtime', '实时监听',
@@ -131,13 +295,15 @@ return view.extend({
 		o.rmempty = true;
 		o.placeholder = '/etc/openclash/config';
 
-		// --- Node Health Monitor ---
+		// ============================================================
+		//  Node Health Monitor
+		// ============================================================
 		s = m.section(form.NamedSection, 'health', 'health', '节点故障转移通知');
 		s.addremove = false;
 		s.anonymous = false;
 
 		o = s.option(form.Flag, 'enable', '启用',
-			'监测代理组节点切换，故障转移时发送 Telegram 通知');
+			'监测代理组节点切换，故障转移时发送通知');
 		o.default = '0';
 		o.rmempty = false;
 
