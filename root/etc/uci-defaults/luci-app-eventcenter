@@ -33,6 +33,11 @@ if [ ! -f /etc/config/eventcenter ]; then
         set eventcenter.serverchan.enable='0'
         set eventcenter.serverchan.sendkey=''
 
+        set eventcenter.serverchan3=notifier
+        set eventcenter.serverchan3.enable='0'
+        set eventcenter.serverchan3.sendkey=''
+        set eventcenter.serverchan3.uid=''
+
         set eventcenter.openclash=monitor
         set eventcenter.openclash.enable='1'
         set eventcenter.openclash.paths=''
@@ -80,6 +85,11 @@ ensure_section notifier bark \
 ensure_section notifier serverchan \
     enable '0' \
     sendkey ''
+
+ensure_section notifier serverchan3 \
+    enable '0' \
+    sendkey '' \
+    uid ''
 
 # Ensure interval exists on monitor section
 if ! uci -q get eventcenter.@monitor[0].interval >/dev/null 2>&1; then

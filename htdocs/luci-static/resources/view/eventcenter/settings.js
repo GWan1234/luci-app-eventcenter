@@ -233,6 +233,45 @@ return view.extend({
 		};
 
 		// ============================================================
+		//  Server酱³ Notifier (手机APP推送)
+		// ============================================================
+		s = m.section(form.NamedSection, 'serverchan3', 'notifier', 'Server酱³ (手机APP)');
+		s.addremove = false;
+		s.anonymous = false;
+
+		o = s.option(form.Flag, 'enable', '启用',
+			'启用 Server酱³ 手机APP推送');
+		o.default = '0';
+		o.rmempty = false;
+
+		o = s.option(form.Value, 'sendkey', 'SendKey',
+			'Server酱³ 的 SendKey (在 Server酱³ APP 中获取)');
+		o.password = true;
+		o.rmempty = true;
+
+		o = s.option(form.Value, 'uid', 'UID',
+			'用户 UID，可从 SendKey 自动提取。如 SCT65273T... 自动提取为 65273。留空自动提取');
+		o.rmempty = true;
+		o.placeholder = '自动提取';
+
+		o = s.option(form.Button, '_test_serverchan3', '测试 Server酱³',
+			'发送测试通知');
+		o.inputtitle = '发送测试';
+		o.inputstyle = 'action';
+		o.onclick = function() {
+			var btn = this;
+			btn.textContent = '发送中...';
+			btn.disabled = true;
+			fs.exec('notifier_serverchan3.sh', ['Server酱³ 测试消息 - Event Center']).then(function() {
+				btn.textContent = '测试已发送!';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			}).catch(function() {
+				btn.textContent = '失败';
+				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+			});
+		};
+
+		// ============================================================
 		//  OpenClash Monitor (with cron interval)
 		// ============================================================
 		s = m.section(form.NamedSection, 'openclash', 'monitor', 'OpenClash 订阅监控');
