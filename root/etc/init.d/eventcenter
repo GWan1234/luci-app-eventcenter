@@ -27,7 +27,7 @@ start_service() {
     fi
 
     # Remove old eventcenter cron entries and add new ones
-    grep -v 'eventcenter_check' /etc/crontabs/root > /tmp/ec_cr_$$ 2>/dev/null
+    grep -v '/usr/bin/eventcenter' /etc/crontabs/root > /tmp/ec_cr_$$ 2>/dev/null
     echo "${cron_expr} /usr/bin/eventcenter check openclash" >> /tmp/ec_cr_$$
     cp /tmp/ec_cr_$$ /etc/crontabs/root
     rm -f /tmp/ec_cr_$$
@@ -36,11 +36,6 @@ start_service() {
     # --- Node health monitoring ---
     local health_enable
     health_enable=$(uci -q get eventcenter.@health[0].enable 2>/dev/null)
-
-    # Always remove old health cron first
-    grep -v 'eventcenter_check_node_health' /etc/crontabs/root > /tmp/ec_crh_$$ 2>/dev/null
-    cp /tmp/ec_crh_$$ /etc/crontabs/root
-    rm -f /tmp/ec_crh_$$
 
     if [ "$health_enable" = "1" ]; then
         local health_interval
@@ -96,7 +91,7 @@ stop_service() {
     fi
 
     # Remove cron tasks
-    grep -v 'eventcenter_check' /etc/crontabs/root > /tmp/ec_crs_$$ 2>/dev/null
+    grep -v '/usr/bin/eventcenter' /etc/crontabs/root > /tmp/ec_crs_$$ 2>/dev/null
     cp /tmp/ec_crs_$$ /etc/crontabs/root
     rm -f /tmp/ec_crs_$$
 
