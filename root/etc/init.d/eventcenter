@@ -71,8 +71,8 @@ start_service() {
         fi
     fi
 
-    # Reload cron
-    /etc/init.d/cron restart 2>/dev/null
+    # Reload cron (killall is faster than /etc/init.d/cron restart on OpenWrt)
+    killall crond 2>/dev/null; crond 2>/dev/null
 
     logger -t eventcenter "service started (interval=${interval}min, realtime=${realtime:-off})"
 }
@@ -94,7 +94,7 @@ stop_service() {
     sed -i '/eventcenter_check_node_health/d' /etc/crontabs/root
 
     # Reload cron
-    /etc/init.d/cron restart 2>/dev/null
+    killall crond 2>/dev/null; crond 2>/dev/null
 
     logger -t eventcenter "service stopped"
 }

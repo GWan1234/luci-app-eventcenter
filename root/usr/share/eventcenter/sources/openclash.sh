@@ -48,10 +48,10 @@ detect_file_format() {
 # Parses SIP008 JSON format, outputs: name\tserver:port
 parse_sip008() {
     local _file="$1"
-    # SIP008 is a JSON array of proxy objects
-    # Fields: name, server, port, type/cipher, password
-    # Use sed/awk to extract since we don't have jq on OpenWrt
-    sed 's/},{/}\n{/g' "$_file" 2>/dev/null | while IFS= read -r _obj; do
+    local _tmp="${_file}.split_$$"
+    # Split JSON array into one object per line
+    sed 's/},{/}\n{/g' "$_file" 2>/dev/null > "$_tmp"
+    while IFS= read -r _obj; do
         local _name _server _port
         _name=$(echo "$_obj" | grep -o '"name"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"name"[[:space:]]*:[[:space:]]*"//;s/"$//')
         _server=$(echo "$_obj" | grep -o '"server"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"server"[[:space:]]*:[[:space:]]*"//;s/"$//')
@@ -67,14 +67,18 @@ parse_sip008() {
         local _key="${_server}:${_port}"
         [ "$_key" = ":" ] && _key="unknown"
         printf '%s\t%s\n' "$_name" "$_key"
-    done
+    done < "$_tmp"
+    rm -f "$_tmp"
 }
 
 # parse_base64_list <file>
 # Parses base64-encoded node list (one node://xxx per line after decode)
 parse_base64_list() {
     local _file="$1"
-    base64 -d "$_file" 2>/dev/null | while IFS= read -r _line; do
+    local _tmp="${_file}.decoded_$$"
+    # Ensure trailing newline (base64 -d may not add one)
+    { base64 -d "$_file" 2>/dev/null; echo; } > "$_tmp"
+    while IFS= read -r _line; do
         [ -z "$_line" ] && continue
         # Extract name from URI fragment (#name) or use the protocol
         local _name
@@ -85,7 +89,8 @@ parse_base64_list() {
             *剩余*|*到期*|*套餐*|*距离*|*故障*|*充值*|*流量*|*重置*|*过期*|*expire*|*traffic*|*reset*|*servername*) continue ;;
         esac
         [ -n "$_name" ] && printf '%s\tunknown\n' "$_name"
-    done
+    done < "$_tmp"
+    rm -f "$_tmp"
 }
 
 # extract_node_names_multi <file>
@@ -101,18 +106,23 @@ extract_node_names_multi() {
             parse_sip008 "$_file"
             ;;
         clash_yaml)
-            extract_node_names "$_file" | while IFS= read -r _name; do
+            local _tmp="${_file}.ynames_$$"
+            extract_node_names "$_file" > "$_tmp"
+            while IFS= read -r _name; do
                 printf '%s\tunknown\n' "$_name"
-            done
+            done < "$_tmp"
+            rm -f "$_tmp"
             ;;
         base64)
             parse_base64_list "$_file"
             ;;
         *)
-            # Fallback: try YAML parser
-            extract_node_names "$_file" | while IFS= read -r _name; do
+            local _tmp_fb="${_file}.fbnames_$$"
+            extract_node_names "$_file" > "$_tmp_fb"
+            while IFS= read -r _name; do
                 printf '%s\tunknown\n' "$_name"
-            done
+            done < "$_tmp_fb"
+            rm -f "$_tmp_fb"
             ;;
     esac
 }
