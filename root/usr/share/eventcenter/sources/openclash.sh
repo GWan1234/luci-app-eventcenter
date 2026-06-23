@@ -278,9 +278,9 @@ build_notification() {
 
             if (added_list != "" || removed_list != "" || modified_list != "") {
                 printf "\n📋 *变更明细*\n"
-                if (added_list != "") printf "%s", added_list
-                if (removed_list != "") printf "%s", removed_list
-                if (modified_list != "") printf "%s", modified_list
+                if (added_list != "") printf "%s\n", added_list
+                if (removed_list != "") printf "%s\n", removed_list
+                if (modified_list != "") printf "%s\n", modified_list
             }
 
             printf "\n`%s`", ts

@@ -58,12 +58,14 @@ engine_emit() {
 }
 
 # engine_test
-# Sends a test notification to verify the pipeline
+# Sends a test notification via Telegram only (save Server酱 quota)
 engine_test() {
-    echo "Sending test event..."
-    engine_emit "eventcenter" "test" "info" \
+    echo "Sending test notification via Telegram..."
+    local _msg
+    _msg=$(format_message "" "eventcenter" "test" "info" \
         "Event Center Test" \
-        "This is a test notification from Event Center. If you see this, the pipeline is working."
+        "If you see this, the pipeline is working.")
+    /usr/bin/notifier_telegram.sh "$_msg"
 }
 
 # engine_check <source>
