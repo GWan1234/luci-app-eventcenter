@@ -252,16 +252,17 @@ check() {
         local _tmp_awk="/tmp/ec_hawk_$$"
         cat > "$_tmp_awk" << 'AWKEOF'
 BEGIN {
-    printf "\xf0\x9f\x9a\xa8 *节点自动切换*\n"
-    printf "\xf0\x9f\x94\xb4\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\n"
-    cmd = "date +\"%Y-%m-%d %H:%M:%S\""
+    printf "🚤 *节点自动切换*\n"
+    cmd = "date +\"%H:%M\""
     cmd | getline ts; close(cmd)
-    printf "\xf0\x9f\x93\x85 %s\n\n", ts
 }
 {
-    printf "%s\n", $1
-    printf "  \xe2\x9d\x8c %s (\xe4\xb8\x8d\xe5\x8f\xaf\xe8\xbe\xbe)\n", $2
-    printf "  \xe2\x86\x92 \xe2\x9c\x85 %s\n\n", $3
+    printf "\n*%s*\n", $1
+    printf "  ❌ ~~%s~~\n", $2
+    printf "  → ✅ %s\n", $3
+}
+END {
+    printf "\n`%s`\n", ts
 }
 AWKEOF
         local _msg
@@ -280,15 +281,16 @@ AWKEOF
         local _tmp_awk_r="/tmp/ec_hawkr_$$"
         cat > "$_tmp_awk_r" << 'AWKEOFR'
 BEGIN {
-    printf "\xf0\x9f\x92\x9a *节点恢复*\n"
-    printf "\xf0\x9f\x9f\xa2\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\n"
-    cmd = "date +\"%Y-%m-%d %H:%M:%S\""
+    printf "💚 *节点恢复*\n"
+    cmd = "date +\"%H:%M\""
     cmd | getline ts; close(cmd)
-    printf "\xf0\x9f\x93\x85 %s\n\n", ts
 }
 {
-    printf "%s\n", $1
-    printf "  \xf0\x9f\x94\x84 %s \xe2\x86\x92 %s\n\n", $2, $3
+    printf "\n*%s*\n", $1
+    printf "  🔄 %s → %s\n", $2, $3
+}
+END {
+    printf "\n`%s`\n", ts
 }
 AWKEOFR
         local _msg_r

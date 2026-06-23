@@ -171,8 +171,9 @@ format_message() {
     _time=$(date '+%Y-%m-%d %H:%M:%S')
 
     if [ -z "$_template" ]; then
-        # Default template using printf for real newlines
-        _template=$(printf '*事件中心*\n\n📋 *%%TITLE%%*\n\n%%MESSAGE%%\n\n🔹 来源: `%%SOURCE%%`\n🔹 事件: `%%EVENT%%`\n🔹 级别: %%LEVEL%%\n🕐 %%TIME%%')
+        _template="*%TITLE%*
+
+%MESSAGE%"
     fi
 
     # Use awk for safe substitution
