@@ -1,0 +1,35 @@
+#!/bin/sh
+# luci-app-eventcenter: set defaults only if config doesn't exist
+
+if [ ! -f /etc/config/eventcenter ]; then
+    uci -q batch <<-EOUCI
+        set eventcenter.global=eventcenter
+        set eventcenter.global.enable='1'
+        set eventcenter.global.log_path='/tmp/eventcenter.log'
+        set eventcenter.global.log_max_lines='1000'
+        set eventcenter.global.dedup_ttl='300'
+        set eventcenter.global.dedup_path='/tmp/eventcenter_dedup'
+        set eventcenter.global.dedup_max='500'
+
+        set eventcenter.telegram=notifier
+        set eventcenter.telegram.enable='0'
+        set eventcenter.telegram.token=''
+        set eventcenter.telegram.chatid=''
+        set eventcenter.telegram.parse_mode='Markdown'
+
+        set eventcenter.openclash=monitor
+        set eventcenter.openclash.enable='1'
+        set eventcenter.openclash.paths=''
+        set eventcenter.openclash.realtime='1'
+        set eventcenter.openclash.debounce='5'
+
+        set eventcenter.node_health=health
+        set eventcenter.node_health.enable='0'
+        set eventcenter.node_health.interval='5'
+        set eventcenter.node_health.delay_threshold='3000'
+        set eventcenter.node_health.test_url='http://www.gstatic.com/generate_204'
+        set eventcenter.node_health.notify_recovery='1'
+        set eventcenter.node_health.monitor_groups=''
+        commit eventcenter
+EOUCI
+fi
