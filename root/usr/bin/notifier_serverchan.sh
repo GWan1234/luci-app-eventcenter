@@ -1,7 +1,8 @@
 #!/bin/sh
 # Event Center - Server酱 Turbo Notifier
 # /usr/bin/notifier_serverchan.sh "<message>"
-# Sends notification via ServerChan (sct.ftqq.com)
+# Sends notification via ServerChan Turbo (sct.ftqq.com)
+# API: https://sctapi.ftqq.com/<sendkey>.send
 
 . /usr/share/eventcenter/utils.sh
 
@@ -34,7 +35,6 @@ _response=$(curl -s -o /tmp/serverchan_response.json -w "%{http_code}" \
 
 _curl_exit=$?
 
-# Check response for success
 _code=0
 if [ -f /tmp/serverchan_response.json ]; then
     _code=$(grep -o '"code":[0-9]*' /tmp/serverchan_response.json | grep -o '[0-9]*' | head -1)
