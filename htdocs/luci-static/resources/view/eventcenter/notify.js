@@ -64,10 +64,16 @@ function testBtn(label, cmd, args) {
 			ev.stopPropagation();
 			btn.textContent = '发送中…';
 			btn.disabled = true;
-			fs.exec(cmd, args).then(function() {
-				btn.textContent = '✓ 已发送';
-				btn.style.background = '#dcfce7';
-				btn.style.color = '#16a34a';
+			fs.exec(cmd, args).then(function(res) {
+				if (res && res.code !== undefined && res.code !== 0) {
+					btn.textContent = '✗ 失败';
+					btn.style.background = '#fef2f2';
+					btn.style.color = '#dc2626';
+				} else {
+					btn.textContent = '✓ 已发送';
+					btn.style.background = '#dcfce7';
+					btn.style.color = '#16a34a';
+				}
 				setTimeout(function() { btn.textContent = label; btn.style.background = '#f0f0f0'; btn.style.color = '#333'; btn.disabled = false; }, 2500);
 			}).catch(function() {
 				btn.textContent = '✗ 失败';

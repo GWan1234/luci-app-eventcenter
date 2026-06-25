@@ -93,8 +93,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('eventcenter', ['test']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('eventcenter', ['test']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
@@ -131,8 +131,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('notifier_wechat.sh', ['企业微信测试消息 - Event Center']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('notifier_wechat.sh', ['企业微信测试消息 - Event Center']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
@@ -189,8 +189,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('notifier_bark.sh', ['Bark 测试消息 - Event Center']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('notifier_bark.sh', ['Bark 测试消息 - Event Center']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
@@ -223,8 +223,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('notifier_serverchan.sh', ['Server酱测试消息 - Event Center']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('notifier_serverchan.sh', ['Server酱测试消息 - Event Center']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
@@ -262,8 +262,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('notifier_serverchan3.sh', ['Server酱³ 测试消息 - Event Center']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('notifier_serverchan3.sh', ['Server酱³ 测试消息 - Event Center']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
@@ -344,8 +344,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('notifier_ntfy.sh', ['ntfy 测试消息 - Event Center']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('notifier_ntfy.sh', ['ntfy 测试消息 - Event Center']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
@@ -390,8 +390,8 @@ return view.extend({
 			var btn = this;
 			btn.textContent = '发送中...';
 			btn.disabled = true;
-			fs.exec('notifier_pushplus.sh', ['PushPlus 测试消息 - Event Center']).then(function() {
-				btn.textContent = '测试已发送!';
+			fs.exec('notifier_pushplus.sh', ['PushPlus 测试消息 - Event Center']).then(function(res) {
+				btn.textContent = (res && res.code !== 0) ? '发送失败' : '测试已发送!';
 				setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
 			}).catch(function() {
 				btn.textContent = '失败';
