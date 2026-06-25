@@ -265,38 +265,47 @@ return view.extend({
 		o = s.option(form.DynamicList, 'sub_names', '关注的订阅',
 			'只监控这些订阅，留空则监控所有');
 
-		var formEl = m.render();
-
-		/* 保存并重启按钮 */
-		var restartBtn = E('button', {
-			'class': 'btn',
-			'style': 'position:absolute;top:8px;right:20px;padding:8px 24px;border-radius:8px;font-weight:600;font-size:0.9em;background:#f59e0b;color:#fff;border:none;cursor:pointer;z-index:10',
-			'click': function() {
-				restartBtn.textContent = '保存并重启中...';
-				restartBtn.disabled = true;
-				uci.save().then(function() {
-					return uci.apply();
-				}).then(function() {
-					return fs.exec('/etc/init.d/eventcenter', ['restart']);
-				}).then(function(res) {
-					if (res && res.code === 0) {
-						restartBtn.textContent = '✓ 已保存并重启';
-						restartBtn.style.background = '#22c55e';
-					} else {
-						restartBtn.textContent = '✓ 已保存（重启失败）';
-						restartBtn.style.background = '#f59e0b';
+		/* post-render: 在 cbi-page-actions 里追加"保存并重启"按钮 */
+		return m.render().then(function(node) {
+			function addRestartBtn(container) {
+				var btn = E('button', {
+					'class': 'cbi-button cbi-button-apply',
+					'style': 'margin-left:8px;background:#f59e0b;border-color:#f59e0b;color:#fff',
+					'click': function(ev) {
+						ev.preventDefault();
+						btn.textContent = '保存并重启中...';
+						btn.disabled = true;
+						uci.save().then(function() {
+							return uci.apply();
+						}).then(function() {
+							return fs.exec('/etc/init.d/eventcenter', ['restart']);
+						}).then(function(res) {
+							btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
+							btn.style.background = '#22c55e';
+							btn.style.borderColor = '#22c55e';
+							setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+						}).catch(function() {
+							btn.textContent = '✗ 失败';
+							btn.style.background = '#dc2626';
+							btn.style.borderColor = '#dc2626';
+							setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+						});
 					}
-					restartBtn.style.color = '#fff';
-					setTimeout(function() { restartBtn.textContent = '保存并重启'; restartBtn.style.background = '#f59e0b'; restartBtn.disabled = false; }, 3000);
-				}).catch(function() {
-					restartBtn.textContent = '✗ 操作失败';
-					restartBtn.style.background = '#dc2626';
-					restartBtn.style.color = '#fff';
-					setTimeout(function() { restartBtn.textContent = '保存并重启'; restartBtn.style.background = '#f59e0b'; restartBtn.disabled = false; }, 3000);
-				});
+				}, '保存并重启');
+				container.appendChild(btn);
 			}
-		}, '保存并重启');
 
-		return E('div', { 'style': 'position:relative' }, [restartBtn, formEl]);
+			/* cbi-page-actions 是 cbi-map 的兄弟节点 */
+			var pageActions = node.parentElement ? node.parentElement.querySelector('.cbi-page-actions') : null;
+			if (pageActions) {
+				addRestartBtn(pageActions);
+			} else {
+				setTimeout(function() {
+					var pa = document.querySelector('.cbi-page-actions');
+					if (pa) addRestartBtn(pa);
+				}, 200);
+			}
+			return node;
+		});
 	}
 });
