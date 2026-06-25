@@ -281,7 +281,7 @@ return view.extend({
 		/* 保存按钮 */
 		var saveBtn = E('button', {
 			'class': 'cbi-button cbi-button-save',
-			'click': function() {
+			'onclick': function() {
 				/* Telegram */
 				saveCfg('telegram', 'enable', document.getElementById('telegram-enable').checked ? '1' : '0');
 				saveCfg('telegram', 'token', document.getElementById('tg-token').value);
@@ -344,7 +344,7 @@ return view.extend({
 		var restartBtn = E('button', {
 			'class': 'cbi-button cbi-button-apply',
 			'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff',
-			'click': function() {
+			'onclick': function() {
 				restartBtn.textContent = '保存中...';
 				restartBtn.disabled = true;
 				/* 先保存所有渠道配置 */

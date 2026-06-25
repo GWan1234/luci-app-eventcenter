@@ -167,27 +167,47 @@ return view.extend({
 		]);
 
 		/* 底部按钮栏 */
+		var saveBtn = E('button', { 'class': 'cbi-button cbi-button-save' }, '保存设置');
+		saveBtn.addEventListener('click', function() {
+			var btn = this;
+			btn.textContent = '保存中...';
+			btn.disabled = true;
+			uci.save().then(function() {
+				return uci.apply();
+			}).then(function() {
+				btn.textContent = '✓ 已保存';
+				setTimeout(function() { btn.textContent = '保存设置'; btn.disabled = false; }, 2000);
+			}).catch(function() {
+				btn.textContent = '✗ 失败';
+				setTimeout(function() { btn.textContent = '保存设置'; btn.disabled = false; }, 2000);
+			});
+		});
+
+		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply', 'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff' }, '保存并重启');
+		restartBtn.addEventListener('click', function() {
+			var btn = this;
+			btn.textContent = '保存并重启中...';
+			btn.disabled = true;
+			uci.save().then(function() {
+				return uci.apply();
+			}).then(function() {
+				return fs.exec('/etc/init.d/eventcenter', ['restart']);
+			}).then(function(res) {
+				btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
+				btn.style.background = '#22c55e';
+				btn.style.borderColor = '#22c55e';
+				setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+			}).catch(function() {
+				btn.textContent = '✗ 失败';
+				btn.style.background = '#dc2626';
+				btn.style.borderColor = '#dc2626';
+				setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+			});
+		});
+
 		var pageActions = E('div', { 'class': 'cbi-page-actions', 'style': 'display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee' }, [
-			E('button', {
-				'class': 'cbi-button cbi-button-apply',
-				'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff',
-				'click': function() {
-					var btn = this;
-					btn.textContent = '重启中...';
-					btn.disabled = true;
-					fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
-						btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 重启失败';
-						btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
-						btn.style.borderColor = btn.style.background;
-						setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-					}).catch(function() {
-						btn.textContent = '✗ 重启失败';
-						btn.style.background = '#dc2626';
-						btn.style.borderColor = '#dc2626';
-						setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-					});
-				}
-			}, '重启服务')
+			saveBtn,
+			restartBtn
 		]);
 
 		return E('div', {}, [content, pageActions]);
