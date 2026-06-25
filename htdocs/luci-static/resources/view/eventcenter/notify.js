@@ -4,419 +4,190 @@
 'require fs';
 'require uci';
 
-/* ── 样式常量 ── */
-var cardBase = 'background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:20px;min-width:300px;flex:1 1 340px;max-width:480px;display:flex;flex-direction:column;gap:12px;transition:opacity 0.2s';
-var headerStyle = 'display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid #eee;cursor:pointer;user-select:none';
-var labelStyle = 'font-size:0.85em;color:#555;font-weight:600;margin-bottom:2px';
-var inputStyle = 'width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.9em;box-sizing:border-box';
-var selectStyle = inputStyle;
-var btnStyle = 'padding:8px 16px;border:none;border-radius:6px;font-size:0.85em;cursor:pointer;font-weight:600';
-var descStyle = 'font-size:0.75em;color:#888;margin-top:2px';
+var CARD_CSS = [
+	'.cbi-map { padding:0 !important }',
+	'.cbi-map > h2 { margin-bottom:4px }',
+	'.cbi-map > .cbi-map-descr { color:#666;font-size:0.9em;margin-bottom:20px }',
+	'.cbi-section { background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:20px;margin-bottom:16px;border-top:3px solid #6b7280 }',
+	'.cbi-section > h3 { border-bottom:1px solid #eee;padding-bottom:12px;margin:-20px -20px 16px -20px;padding:16px 20px 12px;font-size:1.05em;font-weight:700 }',
+	'.cbi-value { margin-bottom:10px }',
+	'.cbi-value > .cbi-value-title { font-weight:600;font-size:0.85em;color:#555;margin-bottom:4px }',
+	'.cbi-value input[type=text], .cbi-value input[type=password], .cbi-value textarea, .cbi-value select { border:1px solid #ddd;border-radius:6px;padding:8px 10px }',
+	'.cbi-value input:focus, .cbi-value select:focus { border-color:#3b82f6;outline:none;box-shadow:0 0 0 2px rgba(59,130,246,0.15) }',
+	'.cbi-value .cbi-input-description { font-size:0.75em;color:#888;margin-top:4px }',
+	'.cbi-button-save { background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
+	'.cbi-button-apply { background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
+	'.cbi-page-actions { display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee }',
+	'.ec-test-btn { padding:6px 16px;border:1px solid #3b82f6;color:#3b82f6;background:#eff6ff;border-radius:8px;font-size:.85em;cursor:pointer;font-weight:500;margin-top:8px }',
+	'.ec-test-btn:hover { background:#dbeafe }',
+	'.ec-test-btn:disabled { opacity:0.6;cursor:not-allowed }',
+].join(' ');
+var st = document.createElement('style'); st.textContent = CARD_CSS; document.head.appendChild(st);
 
-function makeField(label, input, desc) {
-	var el = E('div', { 'style': 'display:flex;flex-direction:column' }, [
-		E('div', { 'style': labelStyle }, label),
-		input
-	]);
-	if (desc) el.appendChild(E('div', { 'style': descStyle }, desc));
-	return el;
-}
+var BORDER_COLORS = {
+	'telegram': '#0088cc',
+	'ntfy': '#4caf50',
+	'wechat': '#07c160',
+	'bark': '#ff6b6b',
+	'pushplus': '#ff9800',
+	'discord': '#5865f2',
+	'email': '#ea4335'
+};
 
-function makeSelect(id, options, current, onchange) {
-	var sel = E('select', { 'id': id, 'style': selectStyle, 'change': onchange });
-	options.forEach(function(o) {
-		var opt = E('option', { 'value': o[0] }, o[1]);
-		if (o[0] === current) opt.selected = true;
-		sel.appendChild(opt);
-	});
-	return sel;
-}
-
-function makeInput(id, value, placeholder, type) {
-	return E('input', {
-		'id': id,
-		'type': type || 'text',
-		'value': value || '',
-		'placeholder': placeholder || '',
-		'style': inputStyle
-	});
-}
-
-function statusDot(enabled) {
-	return E('span', {
-		'style': 'display:inline-block;width:10px;height:10px;border-radius:50%;background:' + (enabled ? '#22c55e' : '#d1d5db')
-	});
-}
-
-function loadCfg(section, key, def) {
-	return uci.get('eventcenter', section, key) || def || '';
-}
-
-function saveCfg(section, key, val) {
-	uci.set('eventcenter', section, key, val);
-}
-
-function testBtn(label, cmd, args) {
-	var btn = E('button', {
-		'class': 'btn',
-		'style': btnStyle + 'background:#f0f0f0;color:#333;margin-top:4px',
-		'click': function(ev) {
-			ev.stopPropagation();
-			btn.textContent = '发送中…';
-			btn.disabled = true;
-			fs.exec(cmd, args).then(function(res) {
-				if (res && res.code !== undefined && res.code !== 0) {
-					btn.textContent = '✗ 失败';
-					btn.style.background = '#fef2f2';
-					btn.style.color = '#dc2626';
-				} else {
-					btn.textContent = '✓ 已发送';
-					btn.style.background = '#dcfce7';
-					btn.style.color = '#16a34a';
-				}
-				setTimeout(function() { btn.textContent = label; btn.style.background = '#f0f0f0'; btn.style.color = '#333'; btn.disabled = false; }, 2500);
-			}).catch(function() {
-				btn.textContent = '✗ 失败';
-				btn.style.background = '#fef2f2';
-				btn.style.color = '#dc2626';
-				setTimeout(function() { btn.textContent = label; btn.style.background = '#f0f0f0'; btn.style.color = '#333'; btn.disabled = false; }, 2500);
-			});
-		}
-	}, label);
-	return btn;
-}
-
-/* ── 构建单个通知渠道卡片 ── */
-function buildCard(cfg) {
-	var enabled = loadCfg(cfg.section, 'enable', '0') === '1';
-	var fieldsId = cfg.section + '-fields';
-	var enableId = cfg.section + '-enable';
-
-	/* 启用开关 */
-	var enableToggle = E('label', { 'style': 'display:flex;align-items:center;gap:8px;cursor:pointer' }, [
-		E('input', { 'id': enableId, 'type': 'checkbox', 'checked': enabled ? true : undefined, 'change': function() {
-			var on = document.getElementById(enableId).checked;
-			var fields = document.getElementById(fieldsId);
-			fields.style.opacity = on ? '1' : '0.5';
-			fields.style.pointerEvents = on ? '' : 'none';
-			/* 更新状态指示 */
-			var dot = card.querySelector('.status-dot');
-			var txt = card.querySelector('.status-txt');
-			if (dot) dot.style.background = on ? '#22c55e' : '#d1d5db';
-			if (txt) { txt.textContent = on ? '已启用' : '未启用'; txt.style.color = on ? '#22c55e' : '#9ca3af'; }
-		}}),
-		E('span', { 'style': 'font-size:0.9em' }, cfg.enableLabel || '启用')
-	]);
-
-	/* 字段列表 */
-	var fieldEls = [makeField('启用', enableToggle)];
-	cfg.fields.forEach(function(f) {
-		fieldEls.push(makeField(f.label, f.input, f.desc));
-	});
-	if (cfg.testCmd) {
-		fieldEls.push(testBtn('发送测试', cfg.testCmd, cfg.testArgs || []));
-	}
-
-	var fieldsDiv = E('div', {
-		'id': fieldsId,
-		'style': 'display:flex;flex-direction:column;gap:10px;' + (enabled ? '' : 'opacity:0.5;pointer-events:none')
-	}, fieldEls);
-
-	/* 卡片头部（点击折叠/展开） */
-	var bodyId = cfg.section + '-body';
-	var header = E('div', { 'style': headerStyle, 'click': function() {
-		var body = document.getElementById(bodyId);
-		body.style.display = body.style.display === 'none' ? '' : 'none';
-	}}, [
-		E('span', { 'style': 'font-size:1.4em' }, cfg.icon),
-		E('div', {}, [
-			E('div', { 'style': 'font-weight:700;font-size:1.05em' }, cfg.title),
-			E('div', { 'style': 'font-size:0.75em;color:#888' }, cfg.subtitle)
-		]),
-		E('div', { 'style': 'margin-left:auto;display:flex;align-items:center;gap:6px' }, [
-			statusDot(enabled).addClass ? statusDot(enabled) : statusDot(enabled),
-			E('span', { 'class': 'status-txt', 'style': 'font-size:0.8em;color:' + (enabled ? '#22c55e' : '#9ca3af') }, enabled ? '已启用' : '未启用')
-		])
-	]);
-
-	/* 修正 statusDot 的 class */
-	var dot = header.querySelector('span');
-	if (dot) dot.className = 'status-dot';
-
-	var card = E('div', { 'style': cardBase + ';border-top:3px solid ' + cfg.color }, [
-		header,
-		E('div', { 'id': bodyId }, [fieldsDiv])
-	]);
-
-	return card;
-}
-
-/* ── 渠道定义 ── */
-var channels = [
-	{
-		section: 'telegram',
-		icon: '✈️',
-		title: 'Telegram',
-		subtitle: 'Bot API 推送',
-		color: '#0088cc',
-		enableLabel: '开启 Telegram 推送',
-		testCmd: 'eventcenter',
-		testArgs: ['test'],
-		fields: [
-			{ label: 'Bot Token', input: makeInput('tg-token', loadCfg('telegram', 'token'), '123456:ABC-DEF...', 'password'), desc: '从 @BotFather 获取' },
-			{ label: 'Chat ID', input: makeInput('tg-chatid', loadCfg('telegram', 'chatid'), '649586363'), desc: '发送目标的聊天 ID' },
-			{ label: '解析模式', input: makeSelect('tg-parse', [['Markdown', 'Markdown'], ['HTML', 'HTML']], loadCfg('telegram', 'parse_mode', 'Markdown')) }
-		]
-	},
-	{
-		section: 'ntfy',
-		icon: '📢',
-		title: 'ntfy',
-		subtitle: '自建推送服务',
-		color: '#2563eb',
-		enableLabel: '开启 ntfy 推送',
-		testCmd: 'notifier_ntfy.sh',
-		testArgs: ['ntfy 测试消息 - Event Center'],
-		fields: [
-			{ label: '服务器地址', input: makeInput('ntfy-url', loadCfg('ntfy', 'url', 'https://ntfy.sh'), 'http://192.168.100.100:2586'), desc: '自建或公共 ntfy 服务地址' },
-			{ label: 'Topic', input: makeInput('ntfy-topic', loadCfg('ntfy', 'topic'), 'my-router-events'), desc: '推送主题，客户端需订阅此主题' },
-			{ label: 'Access Token', input: makeInput('ntfy-token', loadCfg('ntfy', 'token'), '', 'password'), desc: '访问令牌（优先于用户名密码）' },
-			{ label: '用户名', input: makeInput('ntfy-user', loadCfg('ntfy', 'user'), 'admin'), desc: 'HTTP Basic Auth 用户名' },
-			{ label: '密码', input: makeInput('ntfy-pass', loadCfg('ntfy', 'pass'), '', 'password'), desc: 'HTTP Basic Auth 密码' },
-			{ label: '优先级', input: makeSelect('ntfy-priority', [
-				['min', '最低'], ['low', '低'], ['default', '默认'], ['high', '高'], ['urgent', '紧急']
-			], loadCfg('ntfy', 'priority', 'default')) }
-		]
-	},
-	{
-		section: 'wechat',
-		icon: '💬',
-		title: '企业微信',
-		subtitle: '群机器人 Webhook',
-		color: '#07c160',
-		enableLabel: '开启企业微信推送',
-		testCmd: 'notifier_wechat.sh',
-		testArgs: ['企业微信测试消息 - Event Center'],
-		fields: [
-			{ label: 'Webhook URL', input: makeInput('wx-webhook', loadCfg('wechat', 'webhook'), 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...'), desc: '企业微信群机器人 Webhook 地址' },
-			{ label: '@成员', input: makeInput('wx-mention', loadCfg('wechat', 'mention'), 'zhangsan|lisi'), desc: '需要 @ 的成员 Userid，多个用 | 分隔' }
-		]
-	},
-	{
-		section: 'bark',
-		icon: '🔔',
-		title: 'Bark',
-		subtitle: 'iOS 推送',
-		color: '#f59e0b',
-		enableLabel: '开启 Bark 推送',
-		testCmd: 'notifier_bark.sh',
-		testArgs: ['Bark 测试消息 - Event Center'],
-		fields: [
-			{ label: '服务器地址', input: makeInput('bark-server', loadCfg('bark', 'server', 'https://api.day.app'), 'https://api.day.app'), desc: '自建服务填你自己的地址' },
-			{ label: 'Device Key', input: makeInput('bark-key', loadCfg('bark', 'device_key'), '', 'password'), desc: 'Bark App 中的设备 Key' },
-			{ label: '推送铃声', input: makeSelect('bark-sound', [
-				['minuet', 'minuet (默认)'], ['healthnote', 'healthnote'], ['alarm', 'alarm'],
-				['antic', 'antic'], ['bell', 'bell'], ['birdsong', 'birdsong'],
-				['bubble', 'bubble'], ['calypso', 'calypso'], ['chime', 'chime'], ['shake', 'shake']
-			], loadCfg('bark', 'sound', 'minuet')) },
-			{ label: '消息分组', input: makeInput('bark-group', loadCfg('bark', 'group', 'EventCenter'), 'EventCenter') }
-		]
-	},
-	{
-		section: 'serverchan',
-		icon: '📨',
-		title: 'Server酱',
-		subtitle: 'Turbo 版推送',
-		color: '#ef4444',
-		enableLabel: '开启 Server酱 推送',
-		testCmd: 'notifier_serverchan.sh',
-		testArgs: ['Server酱测试消息 - Event Center'],
-		fields: [
-			{ label: 'SendKey', input: makeInput('sc-sendkey', loadCfg('serverchan', 'sendkey'), '', 'password'), desc: '在 sct.ftqq.com 获取' }
-		]
-	},
-	{
-		section: 'serverchan3',
-		icon: '📱',
-		title: 'Server酱³',
-		subtitle: '手机 APP 推送',
-		color: '#8b5cf6',
-		enableLabel: '开启 Server酱³ 推送',
-		testCmd: 'notifier_serverchan3.sh',
-		testArgs: ['Server酱³ 测试消息 - Event Center'],
-		fields: [
-			{ label: 'SendKey', input: makeInput('sc3-sendkey', loadCfg('serverchan3', 'sendkey'), '', 'password'), desc: '在 Server酱³ APP 中获取' },
-			{ label: 'UID', input: makeInput('sc3-uid', loadCfg('serverchan3', 'uid'), '自动提取'), desc: '可从 SendKey 自动提取，留空即可' }
-		]
-	},
-	{
-		section: 'pushplus',
-		icon: '📣',
-		title: 'PushPlus',
-		subtitle: '微信推送',
-		color: '#06b6d4',
-		enableLabel: '开启 PushPlus 推送',
-		testCmd: 'notifier_pushplus.sh',
-		testArgs: ['PushPlus 测试消息 - Event Center'],
-		fields: [
-			{ label: 'Token', input: makeInput('pp-token', loadCfg('pushplus', 'token'), '', 'password'), desc: '在 pushplus.plus 获取' },
-			{ label: '群组编码', input: makeInput('pp-topic', loadCfg('pushplus', 'topic'), ''), desc: '一对多推送时的群组编码，留空为一对一' },
-			{ label: '消息模板', input: makeSelect('pp-tpl', [
-				['markdown', 'Markdown'], ['html', 'HTML'], ['txt', '纯文本']
-			], loadCfg('pushplus', 'template', 'markdown')) }
-		]
-	}
-];
-
-/* ── 页面入口 ── */
 return view.extend({
 	load: function() {
-		return uci.load('eventcenter');
+		return Promise.all([uci.load('eventcenter')]);
 	},
 
 	render: function() {
-		/* 构建所有卡片 */
-		var cards = channels.map(buildCard);
+		var m, s, o;
+		m = new form.Map('eventcenter', '通知渠道', '配置消息推送渠道，可同时启用多个。');
 
-		/* 保存按钮 */
-		var saveBtn = E('button', {
-			'class': 'cbi-button cbi-button-save',
-			'onclick': function() {
-				/* Telegram */
-				saveCfg('telegram', 'enable', document.getElementById('telegram-enable').checked ? '1' : '0');
-				saveCfg('telegram', 'token', document.getElementById('tg-token').value);
-				saveCfg('telegram', 'chatid', document.getElementById('tg-chatid').value);
-				saveCfg('telegram', 'parse_mode', document.getElementById('tg-parse').value);
+		/* Telegram */
+		s = m.section(form.NamedSection, 'telegram', 'notify', '✈️ Telegram');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用', '启用 Telegram Bot 推送');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'token', 'Bot Token', '从 @BotFather 获取');
+		o.placeholder = '123456:ABC-DEF...'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'chatid', 'Chat ID', '接收消息的 Chat ID');
+		o.placeholder = '123456789'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.ListValue, 'parse_mode', '消息格式');
+		o.value('HTML'); o.value('Markdown'); o.default = 'HTML'; o.depends('enable', '1'); o.rmempty = false;
 
-				/* ntfy */
-				saveCfg('ntfy', 'enable', document.getElementById('ntfy-enable').checked ? '1' : '0');
-				saveCfg('ntfy', 'url', document.getElementById('ntfy-url').value);
-				saveCfg('ntfy', 'topic', document.getElementById('ntfy-topic').value);
-				saveCfg('ntfy', 'token', document.getElementById('ntfy-token').value);
-				saveCfg('ntfy', 'user', document.getElementById('ntfy-user').value);
-				saveCfg('ntfy', 'pass', document.getElementById('ntfy-pass').value);
-				saveCfg('ntfy', 'priority', document.getElementById('ntfy-priority').value);
+		/* Ntfy */
+		s = m.section(form.NamedSection, 'ntfy', 'notify', '🔔 Ntfy');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用', '启用 Ntfy 自托管推送');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'url', '服务器地址', 'Ntfy 服务器 URL');
+		o.placeholder = 'https://ntfy.sh'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'topic', 'Topic', '消息主题');
+		o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'user', '用户名', '留空则无需认证');
+		o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'pass', '密码', '认证密码');
+		o.password = true; o.depends('enable', '1'); o.rmempty = true;
 
-				/* 企业微信 */
-				saveCfg('wechat', 'enable', document.getElementById('wechat-enable').checked ? '1' : '0');
-				saveCfg('wechat', 'webhook', document.getElementById('wx-webhook').value);
-				saveCfg('wechat', 'mention', document.getElementById('wx-mention').value);
+		/* 企业微信 */
+		s = m.section(form.NamedSection, 'wechat', 'notify', '💬 企业微信');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'webhook', 'Webhook URL');
+		o.placeholder = 'https://qyapi.weixin.qq.com/...'; o.depends('enable', '1'); o.rmempty = true;
 
-				/* Bark */
-				saveCfg('bark', 'enable', document.getElementById('bark-enable').checked ? '1' : '0');
-				saveCfg('bark', 'server', document.getElementById('bark-server').value);
-				saveCfg('bark', 'device_key', document.getElementById('bark-key').value);
-				saveCfg('bark', 'sound', document.getElementById('bark-sound').value);
-				saveCfg('bark', 'group', document.getElementById('bark-group').value);
+		/* Bark */
+		s = m.section(form.NamedSection, 'bark', 'notify', '🔔 Bark');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'server', '服务器地址');
+		o.placeholder = 'https://api.day.app'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'device_key', 'Device Key');
+		o.depends('enable', '1'); o.rmempty = true;
 
-				/* Server酱 */
-				saveCfg('serverchan', 'enable', document.getElementById('serverchan-enable').checked ? '1' : '0');
-				saveCfg('serverchan', 'sendkey', document.getElementById('sc-sendkey').value);
+		/* PushPlus */
+		s = m.section(form.NamedSection, 'pushplus', 'notify', '📨 PushPlus');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'token', 'Token');
+		o.depends('enable', '1'); o.rmempty = true;
 
-				/* Server酱³ */
-				saveCfg('serverchan3', 'enable', document.getElementById('serverchan3-enable').checked ? '1' : '0');
-				saveCfg('serverchan3', 'sendkey', document.getElementById('sc3-sendkey').value);
-				saveCfg('serverchan3', 'uid', document.getElementById('sc3-uid').value);
+		/* Discord */
+		s = m.section(form.NamedSection, 'discord', 'notify', '🎮 Discord');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'webhook', 'Webhook URL');
+		o.placeholder = 'https://discord.com/api/webhooks/...'; o.depends('enable', '1'); o.rmempty = true;
 
-				/* PushPlus */
-				saveCfg('pushplus', 'enable', document.getElementById('pushplus-enable').checked ? '1' : '0');
-				saveCfg('pushplus', 'token', document.getElementById('pp-token').value);
-				saveCfg('pushplus', 'topic', document.getElementById('pp-topic').value);
-				saveCfg('pushplus', 'template', document.getElementById('pp-tpl').value);
+		/* Email */
+		s = m.section(form.NamedSection, 'email', 'notify', '📧 Email');
+		s.addremove = false; s.anonymous = false;
+		o = s.option(form.Flag, 'enable', '启用');
+		o.default = '0'; o.rmempty = false;
+		o = s.option(form.Value, 'smtp_server', 'SMTP 服务器');
+		o.placeholder = 'smtp.gmail.com'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'smtp_port', '端口');
+		o.placeholder = '587'; o.datatype = 'port'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'smtp_user', '发件人');
+		o.placeholder = 'your@email.com'; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'to', '收件人');
+		o.placeholder = 'recipient@email.com'; o.depends('enable', '1'); o.rmempty = true;
 
-				uci.save().then(function() {
-					return uci.apply();
-				}).then(function() {
-					saveBtn.textContent = '✓ 已保存';
-					saveBtn.style.background = '#22c55e';
-					saveBtn.style.color = '#fff';
-					setTimeout(function() { saveBtn.textContent = '保存设置'; saveBtn.style.background = ''; saveBtn.style.color = ''; }, 2000);
-				}).catch(function() {
-					saveBtn.textContent = '✗ 保存失败';
-					saveBtn.style.background = '#dc2626';
-					saveBtn.style.color = '#fff';
-					setTimeout(function() { saveBtn.textContent = '保存设置'; saveBtn.style.background = ''; saveBtn.style.color = ''; }, 2000);
-				});
-			}
-		}, '保存设置');
+		return m.render().then(function(node) {
+			/* 为每个 section 添加边框色和测试按钮 */
+			var sections = node.querySelectorAll('.cbi-section');
+			var channelMap = {
+				'Telegram': 'telegram', 'Ntfy': 'ntfy', '企业微信': 'wechat',
+				'Bark': 'bark', 'PushPlus': 'pushplus', 'Discord': 'discord', 'Email': 'email'
+			};
 
-		/* 保存并重启按钮 */
-		var restartBtn = E('button', {
-			'class': 'cbi-button cbi-button-apply',
-			'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff',
-			'onclick': function() {
-				restartBtn.textContent = '保存中...';
-				restartBtn.disabled = true;
-				/* 先保存所有渠道配置 */
-				saveCfg('telegram', 'enable', document.getElementById('telegram-enable').checked ? '1' : '0');
-				saveCfg('telegram', 'token', document.getElementById('tg-token').value);
-				saveCfg('telegram', 'chatid', document.getElementById('tg-chatid').value);
-				saveCfg('telegram', 'parse_mode', document.getElementById('tg-parse').value);
-				saveCfg('ntfy', 'enable', document.getElementById('ntfy-enable').checked ? '1' : '0');
-				saveCfg('ntfy', 'url', document.getElementById('ntfy-url').value);
-				saveCfg('ntfy', 'topic', document.getElementById('ntfy-topic').value);
-				saveCfg('ntfy', 'token', document.getElementById('ntfy-token').value);
-				saveCfg('ntfy', 'user', document.getElementById('ntfy-user').value);
-				saveCfg('ntfy', 'pass', document.getElementById('ntfy-pass').value);
-				saveCfg('ntfy', 'priority', document.getElementById('ntfy-priority').value);
-				saveCfg('wechat', 'enable', document.getElementById('wechat-enable').checked ? '1' : '0');
-				saveCfg('wechat', 'webhook', document.getElementById('wx-webhook').value);
-				saveCfg('wechat', 'mention', document.getElementById('wx-mention').value);
-				saveCfg('bark', 'enable', document.getElementById('bark-enable').checked ? '1' : '0');
-				saveCfg('bark', 'server', document.getElementById('bark-server').value);
-				saveCfg('bark', 'device_key', document.getElementById('bark-key').value);
-				saveCfg('bark', 'sound', document.getElementById('bark-sound').value);
-				saveCfg('bark', 'group', document.getElementById('bark-group').value);
-				saveCfg('serverchan', 'enable', document.getElementById('serverchan-enable').checked ? '1' : '0');
-				saveCfg('serverchan', 'sendkey', document.getElementById('sc-sendkey').value);
-				saveCfg('serverchan3', 'enable', document.getElementById('serverchan3-enable').checked ? '1' : '0');
-				saveCfg('serverchan3', 'sendkey', document.getElementById('sc3-sendkey').value);
-				saveCfg('serverchan3', 'uid', document.getElementById('sc3-uid').value);
-				saveCfg('pushplus', 'enable', document.getElementById('pushplus-enable').checked ? '1' : '0');
-				saveCfg('pushplus', 'token', document.getElementById('pp-token').value);
-				saveCfg('pushplus', 'topic', document.getElementById('pp-topic').value);
-				saveCfg('pushplus', 'template', document.getElementById('pp-tpl').value);
-				uci.save().then(function() {
-					return uci.apply();
-				}).then(function() {
-					restartBtn.textContent = '重启中...';
-					return fs.exec('/etc/init.d/eventcenter', ['restart']);
-				}).then(function(res) {
-					if (res && res.code === 0) {
-						restartBtn.textContent = '✓ 已保存并重启';
-						restartBtn.style.background = '#22c55e';
-					} else {
-						restartBtn.textContent = '✓ 已保存（重启失败）';
-						restartBtn.style.background = '#f59e0b';
+			sections.forEach(function(sec) {
+				var title = sec.querySelector('h3');
+				if (!title) return;
+				var text = title.textContent;
+				Object.keys(channelMap).forEach(function(key) {
+					if (text.indexOf(key) !== -1) {
+						sec.style.borderTopColor = BORDER_COLORS[channelMap[key]] || '#6b7280';
+
+						/* 添加测试按钮 */
+						var btn = E('button', { 'class': 'ec-test-btn' }, '发送测试');
+						btn.addEventListener('click', function() {
+							var el = this;
+							el.textContent = '测试中...'; el.disabled = true;
+							fs.exec('/usr/share/eventcenter/notifier_' + channelMap[key] + '.sh', ['test']).then(function(res) {
+								if (res.code === 0) {
+									el.textContent = '✓ 已发送';
+									el.style.borderColor = '#22c55e'; el.style.color = '#22c55e'; el.style.background = '#d1fae5';
+								} else {
+									el.textContent = '✗ 失败';
+									el.style.borderColor = '#dc2626'; el.style.color = '#dc2626'; el.style.background = '#fee2e2';
+								}
+								setTimeout(function() {
+									el.textContent = '发送测试';
+									el.style.borderColor = '#3b82f6'; el.style.color = '#3b82f6'; el.style.background = '#eff6ff';
+									el.disabled = false;
+								}, 2000);
+							});
+						});
+						sec.appendChild(btn);
 					}
-					restartBtn.style.color = '#fff';
-					setTimeout(function() { restartBtn.textContent = '保存并重启'; restartBtn.style.background = '#f59e0b'; restartBtn.disabled = false; }, 3000);
-				}).catch(function() {
-					restartBtn.textContent = '✗ 操作失败';
-					restartBtn.style.background = '#dc2626';
-					restartBtn.style.color = '#fff';
-					setTimeout(function() { restartBtn.textContent = '保存并重启'; restartBtn.style.background = '#f59e0b'; restartBtn.disabled = false; }, 3000);
 				});
+			});
+
+			/* 追加保存并重启按钮 */
+			var pageActions = node.parentElement ? node.parentElement.querySelector('.cbi-page-actions') : null;
+			function addRestartBtn(container) {
+				var restartBtn = E('button', { 'class': 'cbi-button-apply', 'style': 'margin-left:8px' }, '保存并重启');
+				restartBtn.addEventListener('click', function() {
+					var btn = this;
+					btn.textContent = '保存中...'; btn.disabled = true;
+					uci.save().then(function() { return uci.apply(); }).then(function() {
+						btn.textContent = '重启中...';
+						return fs.exec('/etc/init.d/eventcenter', ['restart']);
+					}).then(function(res) {
+						btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
+						btn.style.background = '#22c55e'; btn.style.borderColor = '#22c55e';
+						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					}).catch(function() {
+						btn.textContent = '✗ 失败'; btn.style.background = '#dc2626'; btn.style.borderColor = '#dc2626';
+						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					});
+				});
+				container.appendChild(restartBtn);
 			}
-		}, '保存并重启');
-
-		/* 布局 */
-		var content = E('div', { 'style': 'padding:0' }, [
-			E('h2', { 'style': 'margin-bottom:4px' }, '通知渠道'),
-			E('div', { 'style': 'color:#666;font-size:0.9em;margin-bottom:20px' }, '配置消息推送渠道，可同时启用多个。点击卡片标题可折叠/展开。'),
-			E('div', { 'style': 'display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start' }, cards)
-		]);
-
-		/* 底部按钮栏 */
-		var pageActions = E('div', { 'class': 'cbi-page-actions', 'style': 'display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee' }, [
-			saveBtn,
-			restartBtn
-		]);
-
-		return E('div', {}, [content, pageActions]);
+			if (pageActions) {
+				addRestartBtn(pageActions);
+			} else {
+				setTimeout(function() {
+					var pa = document.querySelector('.cbi-page-actions');
+					if (pa) addRestartBtn(pa);
+				}, 200);
+			}
+			return node;
+		});
 	},
-
-	handleSaveApply: null,
-	handleSave: null,
-	handleReset: null
 });
