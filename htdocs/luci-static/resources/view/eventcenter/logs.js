@@ -39,32 +39,7 @@ return view.extend({
 							fs.write(logPath, '').then(function() { refreshLogs(); });
 						}
 					}
-				}, '🗑 清空日志'),
-				E('button', {
-					'id': 'btn-restart',
-					'style': btnStyle + 'background:#f59e0b;color:#fff',
-					'click': function() {
-						var btn = document.getElementById('btn-restart');
-						btn.textContent = '重启中...';
-						btn.disabled = true;
-						fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
-							if (res && res.code === 0) {
-								btn.textContent = '✓ 已重启';
-								btn.style.background = '#22c55e';
-							} else {
-								btn.textContent = '✗ 重启失败';
-								btn.style.background = '#dc2626';
-							}
-							btn.style.color = '#fff';
-							setTimeout(function() { btn.textContent = '🔄 重启服务'; btn.style.background = '#f59e0b'; btn.disabled = false; }, 3000);
-						}).catch(function() {
-							btn.textContent = '✗ 重启失败';
-							btn.style.background = '#dc2626';
-							btn.style.color = '#fff';
-							setTimeout(function() { btn.textContent = '🔄 重启服务'; btn.style.background = '#f59e0b'; btn.disabled = false; }, 3000);
-						});
-					}
-				}, '🔄 重启服务')
+				}, '🗑 清空日志')
 			])
 		]);
 
@@ -187,7 +162,31 @@ return view.extend({
 			});
 		}, 30);
 
-		return container;
+		/* 底部按钮栏 */
+		var pageActions = E('div', { 'class': 'cbi-page-actions', 'style': 'display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee' }, [
+			E('button', {
+				'class': 'cbi-button cbi-button-apply',
+				'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff',
+				'click': function() {
+					var btn = this;
+					btn.textContent = '重启中...';
+					btn.disabled = true;
+					fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
+						btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 重启失败';
+						btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
+						btn.style.borderColor = btn.style.background;
+						setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					}).catch(function() {
+						btn.textContent = '✗ 重启失败';
+						btn.style.background = '#dc2626';
+						btn.style.borderColor = '#dc2626';
+						setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					});
+				}
+			}, '重启服务')
+		]);
+
+		return E('div', {}, [container, pageActions]);
 	},
 
 	handleSaveApply: null,

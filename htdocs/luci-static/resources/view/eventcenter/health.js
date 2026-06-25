@@ -119,37 +119,10 @@ return view.extend({
 			});
 		}
 
-		/* ── 重启服务按钮 ── */
-		var restartBtn = E('button', {
-			'class': 'btn',
-			'style': 'margin-top:20px;padding:10px 32px;border-radius:8px;font-weight:600;font-size:0.95em;background:#f59e0b;color:#fff;border:none;cursor:pointer;float:right',
-			'click': function() {
-				restartBtn.textContent = '重启中...';
-				restartBtn.disabled = true;
-				fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
-					if (res && res.code === 0) {
-						restartBtn.textContent = '✓ 已重启';
-						restartBtn.style.background = '#22c55e';
-					} else {
-						restartBtn.textContent = '✗ 重启失败';
-						restartBtn.style.background = '#dc2626';
-					}
-					restartBtn.style.color = '#fff';
-					setTimeout(function() { restartBtn.textContent = '重启服务'; restartBtn.style.background = '#f59e0b'; restartBtn.disabled = false; }, 3000);
-				}).catch(function() {
-					restartBtn.textContent = '✗ 重启失败';
-					restartBtn.style.background = '#dc2626';
-					restartBtn.style.color = '#fff';
-					setTimeout(function() { restartBtn.textContent = '重启服务'; restartBtn.style.background = '#f59e0b'; restartBtn.disabled = false; }, 3000);
-				});
-			}
-		}, '重启服务');
-
 		/* ── 布局 ── */
-		return E('div', { 'style': 'padding:0' }, [
-			E('h2', { 'style': 'margin-bottom:4px;display:inline-block' }, '节点健康监测'),
-			restartBtn,
-			E('div', { 'style': 'color:#666;font-size:0.9em;margin-bottom:20px;clear:both' }, '代理组节点状态、延迟和故障切换记录'),
+		var content = E('div', { 'style': 'padding:0' }, [
+			E('h2', { 'style': 'margin-bottom:4px' }, '节点健康监测'),
+			E('div', { 'style': 'color:#666;font-size:0.9em;margin-bottom:20px' }, '代理组节点状态、延迟和故障切换记录'),
 
 			stats,
 
@@ -189,6 +162,32 @@ return view.extend({
 				])
 			])
 		]);
+
+		/* 底部按钮栏 */
+		var pageActions = E('div', { 'class': 'cbi-page-actions', 'style': 'display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee' }, [
+			E('button', {
+				'class': 'cbi-button cbi-button-apply',
+				'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff',
+				'click': function() {
+					var btn = this;
+					btn.textContent = '重启中...';
+					btn.disabled = true;
+					fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
+						btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 重启失败';
+						btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
+						btn.style.borderColor = btn.style.background;
+						setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					}).catch(function() {
+						btn.textContent = '✗ 重启失败';
+						btn.style.background = '#dc2626';
+						btn.style.borderColor = '#dc2626';
+						setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					});
+				}
+			}, '重启服务')
+		]);
+
+		return E('div', {}, [content, pageActions]);
 	},
 
 	handleSaveApply: null,

@@ -280,8 +280,7 @@ return view.extend({
 
 		/* 保存按钮 */
 		var saveBtn = E('button', {
-			'class': 'btn cbi-button-save',
-			'style': 'padding:10px 32px;border-radius:8px;font-weight:600;font-size:0.95em',
+			'class': 'cbi-button cbi-button-save',
 			'click': function() {
 				/* Telegram */
 				saveCfg('telegram', 'enable', document.getElementById('telegram-enable').checked ? '1' : '0');
@@ -343,8 +342,8 @@ return view.extend({
 
 		/* 保存并重启按钮 */
 		var restartBtn = E('button', {
-			'class': 'btn cbi-button-action',
-			'style': 'padding:10px 32px;border-radius:8px;font-weight:600;font-size:0.95em;background:#f59e0b;color:#fff;border:none',
+			'class': 'cbi-button cbi-button-apply',
+			'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff',
 			'click': function() {
 				restartBtn.textContent = '保存中...';
 				restartBtn.disabled = true;
@@ -402,12 +401,19 @@ return view.extend({
 		}, '保存并重启');
 
 		/* 布局 */
-		return E('div', { 'class': 'cbi-map', 'style': 'padding:0' }, [
+		var content = E('div', { 'style': 'padding:0' }, [
 			E('h2', { 'style': 'margin-bottom:4px' }, '通知渠道'),
 			E('div', { 'style': 'color:#666;font-size:0.9em;margin-bottom:20px' }, '配置消息推送渠道，可同时启用多个。点击卡片标题可折叠/展开。'),
-			E('div', { 'style': 'display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start' }, cards),
-			E('div', { 'style': 'margin-top:24px;display:flex;justify-content:flex-end;gap:12px' }, [saveBtn, restartBtn])
+			E('div', { 'style': 'display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start' }, cards)
 		]);
+
+		/* 底部按钮栏 */
+		var pageActions = E('div', { 'class': 'cbi-page-actions', 'style': 'display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee' }, [
+			saveBtn,
+			restartBtn
+		]);
+
+		return E('div', {}, [content, pageActions]);
 	},
 
 	handleSaveApply: null,
