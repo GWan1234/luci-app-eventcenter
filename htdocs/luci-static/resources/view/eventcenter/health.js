@@ -45,36 +45,22 @@ function statCard(value, label, bg, color) {
 }
 
 return view.extend({
-	load: function() {
-		return Promise.all([
-			uci.load('eventcenter'),
-			L.resolveDefault(fs.exec('/bin/cat', ['/tmp/eventcenter_node_state']), { stdout: '' }),
-			L.resolveDefault(fs.exec('/bin/cat', ['/etc/eventcenter/failed_nodes']), { stdout: '' }),
-			L.resolveDefault(fs.exec('/usr/bin/tail', ['-30', '/etc/eventcenter/latency_history']), { stdout: '' }),
-			L.resolveDefault(fs.exec('/bin/cat', ['/tmp/eventcenter.log']), { stdout: '' }),
-			L.resolveDefault(fs.exec('/usr/share/eventcenter/sources/system-health.sh', ['get']), { stdout: '', code: -1 })
-		]);
-	},
+load: function() {
+	return Promise.all([
+		uci.load('eventcenter'),
+		L.resolveDefault(fs.exec('/bin/cat', ['/tmp/eventcenter_node_state']), { stdout: '' }),
+		L.resolveDefault(fs.exec('/bin/cat', ['/etc/eventcenter/failed_nodes']), { stdout: '' }),
+		L.resolveDefault(fs.exec('/usr/bin/tail', ['-30', '/etc/eventcenter/latency_history']), { stdout: '' }),
+		L.resolveDefault(fs.exec('/bin/cat', ['/tmp/eventcenter.log']), { stdout: '' })
+	]);
+},
 
-	render: function(data) {
-		var healthEnabled = uci.get('eventcenter', 'health', 'enable') === '1';
-		var stateOutput = (data[1] && data[1].stdout) ? data[1].stdout.trim() : '';
-		var failedOutput = (data[2] && data[2].stdout) ? data[2].stdout.trim() : '';
-		var latencyOutput = (data[3] && data[3].stdout) ? data[3].stdout.trim() : '';
-		var logOutput = (data[4] && data[4].stdout) ? data[4].stdout.trim() : '';
-
-		/* 系统状态数据 */
-		var hData = { cpu: 0, mem: 0, disk: 0, temp: 0, uptime: '0天' };
-		try {
-			if (data[5] && data[5].code === 0) {
-				var p = data[5].stdout.split('|');
-				hData.cpu = parseInt(p[0]) || 0;
-				hData.mem = parseInt(p[1]) || 0;
-				hData.temp = parseInt(p[2]) || 0;
-				hData.disk = parseInt(p[3]) || 0;
-				hData.uptime = p[4] || '0天';
-			}
-		} catch(e) {}
+render: function(data) {
+	var healthEnabled = uci.get('eventcenter', 'health', 'enable') === '1';
+	var stateOutput = (data[1] && data[1].stdout) ? data[1].stdout.trim() : '';
+	var failedOutput = (data[2] && data[2].stdout) ? data[2].stdout.trim() : '';
+	var latencyOutput = (data[3] && data[3].stdout) ? data[3].stdout.trim() : '';
+	var logOutput = (data[4] && data[4].stdout) ? data[4].stdout.trim() : '';
 
 		/* Parse state */
 		var stateEntries = stateOutput.split('\n').filter(function(l) { return l.length > 0; }).map(function(line) {
@@ -164,43 +150,12 @@ return view.extend({
 			});
 		}
 
-		/* 系统状态卡片 */
-		var cpuC = hData.cpu > 80 ? '#ef4444' : '#3b82f6';
-		var memC = hData.mem > 80 ? '#ef4444' : '#8b5cf6';
-		var tempC = hData.temp > 75 ? '#ef4444' : '#f59e0b';
-		var sysCard = E('div', { 'class': 'ec-card', 'style': 'border-top:3px solid #10b981' }, [
-			E('h3', {}, '📊 系统状态'),
-			E('div', { 'style': 'display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px' }, [
-				E('div', { 'style': 'background:var(--background-color-secondary,#f9fafb);border-radius:10px;padding:16px' }, [
-					E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🔥 CPU'),
-					E('div', { 'style': 'background:var(--background-color-secondary,#e5e7eb);border-radius:8px;height:12px;overflow:hidden' },
-						E('div', { 'style': 'height:100%;transition:width .3s;background:'+cpuC+';width:'+hData.cpu+'%' })),
-					E('div', { 'style': 'text-align:right;font-size:.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, hData.cpu+'%')
-				]),
-				E('div', { 'style': 'background:var(--background-color-secondary,#f9fafb);border-radius:10px;padding:16px' }, [
-					E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🧠 内存'),
-					E('div', { 'style': 'background:var(--background-color-secondary,#e5e7eb);border-radius:8px;height:12px;overflow:hidden' },
-						E('div', { 'style': 'height:100%;transition:width .3s;background:'+memC+';width:'+hData.mem+'%' })),
-					E('div', { 'style': 'text-align:right;font-size:.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, hData.mem+'%')
-				]),
-				E('div', { 'style': 'background:var(--background-color-secondary,#f9fafb);border-radius:10px;padding:16px' }, [
-					E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🌡️ 温度'),
-					E('div', { 'style': 'font-size:2em;font-weight:700;color:'+tempC }, hData.temp > 0 ? hData.temp+'°C' : 'N/A')
-				]),
-				E('div', { 'style': 'background:var(--background-color-secondary,#f9fafb);border-radius:10px;padding:16px' }, [
-					E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '📡 运行时间'),
-					E('div', { 'style': 'font-size:1.2em;font-weight:700;color:#3b82f6' }, hData.uptime)
-				])
-			])
-		]);
-
 		/* ── 布局 ── */
 		var content = E('div', { 'style': 'padding:0' }, [
 			E('h2', { 'style': 'margin-bottom:4px' }, '节点健康监测'),
 			E('div', { 'style': 'color:var(--text-color-secondary,#666);font-size:0.9em;margin-bottom:20px' }, '代理组节点状态、延迟和故障切换记录'),
 
 			stats,
-			sysCard,
 
 			E('div', { 'class': 'ec-card', 'style': 'border-top:3px solid #2563eb' }, [
 				E('h3', {}, '🔗 当前节点选择'),
