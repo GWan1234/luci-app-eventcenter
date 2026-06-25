@@ -78,6 +78,8 @@ return view.extend({
 		o.depends('enable', '1'); o.rmempty = true;
 		o = s.option(form.Value, 'pass', '密码');
 		o.password = true; o.depends('enable', '1'); o.rmempty = true;
+		o = s.option(form.Value, 'token', 'Access Token', 'Bearer Token 认证（优先于用户名密码）');
+		o.password = true; o.depends('enable', '1'); o.rmempty = true;
 
 		/* 企业微信 */
 		s = m.section(form.NamedSection, 'wechat', 'notify', '💬 企业微信');
