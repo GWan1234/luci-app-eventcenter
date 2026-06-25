@@ -6,7 +6,7 @@ return view.extend({
 	load: function() {
 		return Promise.all([
 			fs.exec('/usr/share/eventcenter/sources/system-health.sh', ['get']),
-			fs.read_file('/tmp/eventcenter.log')
+			fs.exec('/bin/cat', ['/tmp/eventcenter.log'])
 		]);
 	},
 
@@ -25,15 +25,32 @@ return view.extend({
 		} catch(e) {}
 
 		var logLines = [];
-		if (logRes && logRes.content) {
-			var lines = logRes.content.split('\n');
+		if (logRes && logRes.stdout) {
+			var lines = logRes.stdout.split('\n');
 			var start = Math.max(0, lines.length - 100);
 			for (var i = start; i < lines.length; i++) {
 				if (lines[i].trim()) logLines.push(lines[i]);
 			}
 		}
 
-		var css = '.ec-page{padding:0}.ec-card{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:20px;margin-bottom:16px}.ec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}.ec-bar{background:#e5e7eb;border-radius:8px;height:12px;overflow:hidden}.ec-fill{height:100%;transition:width .3s}.ec-log{max-height:500px;overflow-y:auto;font-family:monospace;font-size:.85em}.ec-entry{display:flex;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f0f0f0}.ec-entry:last-child{border-bottom:none}.ec-time{color:#999;min-width:140px}.ec-lvl{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.8em;margin-right:8px;font-weight:500}.ec-msg{flex:1;color:#333;word-break:break-all}.ec-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:20px;border-top:1px solid #eee}';
+		var css = [
+			'.ec-page{padding:0;max-width:100%;overflow-x:hidden}',
+			'.ec-card{background:var(--background-color-white, #fff);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:20px;margin-bottom:16px;overflow:hidden}',
+			'.ec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}',
+			'.ec-bar{background:var(--background-color-secondary, #e5e7eb);border-radius:8px;height:12px;overflow:hidden}',
+			'.ec-fill{height:100%;transition:width .3s}',
+			'.ec-log{max-height:500px;overflow-y:auto;font-family:monospace;font-size:.8em;word-break:break-all}',
+			'.ec-entry{display:flex;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border-color-light, #f0f0f0)}',
+			'.ec-entry:last-child{border-bottom:none}',
+			'.ec-time{color:var(--text-color-secondary, #999);min-width:120px;flex-shrink:0}',
+			'.ec-lvl{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.8em;margin-right:8px;font-weight:500;flex-shrink:0}',
+			'.ec-msg{flex:1;min-width:0;word-break:break-all;color:var(--text-color, #333)}',
+			'.ec-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee)}',
+			'@media (prefers-color-scheme: dark) {',
+			'  .ec-card{background:var(--background-color-white, #1e1e2e);box-shadow:0 2px 8px rgba(0,0,0,.3)}',
+			'  .ec-entry{border-bottom-color:var(--border-color-light, #333)}',
+			'}'
+		].join(' ');
 		var s = document.createElement('style'); s.textContent = css; document.head.appendChild(s);
 
 		var entries = logLines.map(function(line) {
@@ -41,7 +58,7 @@ return view.extend({
 			var time = m ? m[1] : '';
 			var level = m ? (m[2]||'').replace(/[\[\]]/g, '') : '';
 			var msg = m ? m[3] : line;
-			var lc = '#666', lb = '#f3f4f6';
+			var lc = 'var(--text-color-secondary, #666)', lb = 'var(--background-color-secondary, #f3f4f6)';
 			if (level==='error'||level==='ERROR') { lc='#dc2626'; lb='#fee2e2'; }
 			else if (level==='warn'||level==='WARN') { lc='#d97706'; lb='#fef3c7'; }
 			else if (level==='info'||level==='INFO') { lc='#2563eb'; lb='#dbeafe'; }
@@ -58,7 +75,7 @@ return view.extend({
 
 		var content = E('div', { 'class': 'ec-page' }, [
 			E('h2', {}, '日志'),
-			E('p', { 'style': 'color:#666;font-size:.9em;margin-bottom:20px' }, '系统运行日志，最近 100 条记录'),
+			E('p', { 'style': 'color:var(--text-color-secondary, #666);font-size:.9em;margin-bottom:20px' }, '系统运行日志，最近 100 条记录'),
 
 			E('div', { 'class': 'ec-card' }, [
 				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '📊 系统状态'),
@@ -66,12 +83,12 @@ return view.extend({
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🔥 CPU'),
 						E('div', { 'class': 'ec-bar' }, E('div', { 'class': 'ec-fill', 'style': 'background:'+cpuC+';width:'+hData.cpu+'%' })),
-						E('div', { 'style': 'text-align:right;font-size:.8em;color:#666;margin-top:4px' }, hData.cpu+'%')
+						E('div', { 'style': 'text-align:right;font-size:.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, hData.cpu+'%')
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🧠 内存'),
 						E('div', { 'class': 'ec-bar' }, E('div', { 'class': 'ec-fill', 'style': 'background:'+memC+';width:'+hData.mem+'%' })),
-						E('div', { 'style': 'text-align:right;font-size:.8em;color:#666;margin-top:4px' }, hData.mem+'%')
+						E('div', { 'style': 'text-align:right;font-size:.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, hData.mem+'%')
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🌡️ 温度'),
@@ -92,14 +109,14 @@ return view.extend({
 						'style': 'border-color:#ef4444;color:#ef4444',
 						'click': function() {
 							if (confirm('确定要清除所有日志吗？')) {
-								fs.exec('rm', ['-f', '/tmp/eventcenter.log']).then(function() { window.location.reload(); });
+								fs.exec('/bin/rm', ['-f', '/tmp/eventcenter.log']).then(function() { window.location.reload(); });
 							}
 						}
 					}, '🗑️ 清除日志')
 				]),
 				logLines.length > 0
 					? E('div', { 'class': 'ec-log' }, entries)
-					: E('div', { 'style': 'text-align:center;padding:40px;color:#999' }, [
+					: E('div', { 'style': 'text-align:center;padding:40px;color:var(--text-color-secondary,#999)' }, [
 						E('div', { 'style': 'font-size:3em;margin-bottom:12px' }, '📋'),
 						E('div', {}, '暂无日志'),
 						E('div', { 'style': 'font-size:.9em;margin-top:4px' }, '运行监控任务后将在此显示日志')
@@ -110,15 +127,14 @@ return view.extend({
 		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply', 'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff' }, '重启服务');
 		restartBtn.addEventListener('click', function() {
 			var btn = this;
-			btn.textContent = '重启中...';
-			btn.disabled = true;
+			btn.textContent = '重启中...'; btn.disabled = true;
 			fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
 				btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 失败';
 				btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
 				setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.disabled = false; }, 2000);
 			});
 		});
-		var pageActions = E('div', { 'class': 'cbi-page-actions' }, [restartBtn]);
+		var pageActions = E('div', { 'class': 'ec-actions' }, [restartBtn]);
 
 		return E('div', {}, [content, pageActions]);
 	},
