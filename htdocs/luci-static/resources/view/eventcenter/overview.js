@@ -79,11 +79,13 @@ return view.extend({
 			'.ec-dev{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-color-light, #f0f0f0)}',
 			'.ec-dev:last-child{border-bottom:none}',
 			'.ec-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee)}',
+			'.ec-svc-row{display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--background-color-secondary,#f9fafb);border-radius:8px;min-width:0}',
+			'.ec-muted{color:var(--text-color-secondary,#666)}',
 
 		].join(' ');
 		var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 		/* 暗夜模式检测（兼容 Argon 主题手动切换） */
-		(function(){var bg=getComputedStyle(document.body).backgroundColor,m=bg.match(/\\d+/g);if(m){var lum=(0.299*+m[0]+0.587*+m[1]+0.114*+m[2])/255;if(lum<0.5)document.documentElement.classList.add('ec-dark')}var s=document.createElement('style');s.textContent='.ec-dark .ec-card{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}.ec-dark .ec-dev{border-bottom-color:#333!important}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-bar{background:#374151!important}.ec-dark .ec-fill{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.ec-dark .ec-lbl{color:#9ca3af!important}.ec-dark .ec-actions{border-top-color:#374151!important}';document.head.appendChild(s);if(document.documentElement.classList.contains('ec-dark')){setTimeout(function(){document.querySelectorAll('[style]').forEach(function(el){var st=el.getAttribute('style');if(st&&st.indexOf('background-color-secondary')>-1)el.style.background='#1f2937';if(st&&st.indexOf('text-color-secondary')>-1)el.style.color='#9ca3af';if(st&&st.indexOf('border-color-light')>-1)el.style.borderColor='#374151'})},100)}})()
+		(function(){var bg=getComputedStyle(document.body).backgroundColor,m=bg.match(/\\d+/g);if(m){var lum=(0.299*+m[0]+0.587*+m[1]+0.114*+m[2])/255;if(lum<0.5)document.documentElement.classList.add('ec-dark')}var s=document.createElement('style');s.textContent='.ec-dark .ec-card{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}.ec-dark .ec-dev{border-bottom-color:#333!important}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-bar{background:#374151!important}.ec-dark .ec-fill{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.ec-dark .ec-lbl,.ec-dark .ec-muted{color:#9ca3af!important}.ec-dark .ec-svc-row{background:#1f2937!important}.ec-dark .ec-actions{border-top-color:#374151!important}';document.head.appendChild(s)})()
 
 		var cpuC = hData.cpu > 80 ? '#ef4444' : '#3b82f6';
 		var memC = hData.mem > 80 ? '#ef4444' : '#3b82f6';
@@ -110,7 +112,7 @@ return view.extend({
 		/* 服务状态条目追加到统计后面 */
 		svcs.forEach(function(svc) {
 			statsAndSvcItems.push(
-				E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--background-color-secondary,#f9fafb);border-radius:8px;min-width:0' }, [
+				E('div', { 'class': 'ec-svc-row' }, [
 					E('span', { 'style': 'font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, svc.name),
 					E('span', { 'class': 'ec-tag '+(svc.running?'ec-on':'ec-off') }, svc.running?'运行中':'未启用')
 				])
@@ -119,7 +121,7 @@ return view.extend({
 
 		var content = E('div', { 'class': 'ec-page' }, [
 			E('h2', {}, '概览'),
-			E('p', { 'style': 'color:var(--text-color-secondary,#666);font-size:.9em;margin-bottom:20px' }, '系统状态与监控概览'),
+			E('p', { 'class': 'ec-muted', 'style': 'font-size:.9em;margin-bottom:20px' }, '系统状态与监控概览'),
 
 			E('div', { 'class': 'ec-card' }, [
 				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '📊 系统状态'),
@@ -127,16 +129,16 @@ return view.extend({
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🔥 CPU'),
 						E('div', { 'class': 'ec-bar' }, E('div', { 'class': 'ec-fill', 'style': 'background:'+cpuC+';width:'+hData.cpu+'%' })),
-						E('div', { 'style': 'text-align:right;font-size:.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, hData.cpu+'%')
+						E('div', { 'class': 'ec-muted', 'style': 'text-align:right;font-size:.8em;margin-top:4px' }, hData.cpu+'%')
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🧠 内存'),
 						E('div', { 'class': 'ec-bar' }, E('div', { 'class': 'ec-fill', 'style': 'background:'+memC+';width:'+hData.mem+'%' })),
-						E('div', { 'style': 'text-align:right;font-size:.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, hData.mem+'%')
+						E('div', { 'class': 'ec-muted', 'style': 'text-align:right;font-size:.8em;margin-top:4px' }, hData.mem+'%')
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🌡️ 温度'),
-						E('div', { 'style': 'font-size:2em;font-weight:700;color:'+(hData.temp>75?'#ef4444':'var(--text-color-secondary,#999)') }, hData.temp>0?hData.temp+'°C':'N/A')
+						E('div', { 'style': 'font-size:2em;font-weight:700;color:'+(hData.temp>75?'#ef4444':'#999') }, hData.temp>0?hData.temp+'°C':'N/A')
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '📡 运行时间'),
@@ -159,7 +161,7 @@ return view.extend({
 							E('span', {}, (p[2]||'up')==='up'?'🟢':'🔴'),
 							E('div', { 'style': 'min-width:0' }, [
 								E('div', { 'style': 'font-weight:600' }, p[0]||'未知'),
-								E('div', { 'style': 'font-size:.8em;color:var(--text-color-secondary,#666)' }, (p[1]||'?'))
+								E('div', { 'class': 'ec-muted', 'style': 'font-size:.8em' }, (p[1]||'?'))
 							])
 						]);
 					})

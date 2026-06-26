@@ -26,10 +26,11 @@ var EC_CSS = [
 	'.cbi-page-actions { display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee);flex-wrap:wrap }',
 	'.cbi-button-apply { background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
 
-].join(' ');
+			'.ec-muted{color:var(--text-color-secondary,#666)}',
+		].join(' ');
 var st = document.createElement('style'); st.textContent = EC_CSS; document.head.appendChild(st);
 /* 暗夜模式检测（兼容 Argon 主题手动切换） */
-(function(){var bg=getComputedStyle(document.body).backgroundColor,m=bg.match(/\\d+/g);if(m){var lum=(0.299*+m[0]+0.587*+m[1]+0.114*+m[2])/255;if(lum<0.5)document.documentElement.classList.add('ec-dark')}var s=document.createElement('style');s.textContent='.ec-dark .ec-card,.ec-dark .cbi-section{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}.ec-dark .ec-table th{border-bottom-color:#333!important;color:#9ca3af!important}.ec-dark .ec-table td{border-bottom-color:#2a2a3e!important}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .cbi-page-actions{border-top-color:#374151!important}';document.head.appendChild(s);if(document.documentElement.classList.contains('ec-dark')){setTimeout(function(){document.querySelectorAll('[style]').forEach(function(el){var st=el.getAttribute('style');if(st&&st.indexOf('background-color-secondary')>-1)el.style.background='#1f2937';if(st&&st.indexOf('text-color-secondary')>-1)el.style.color='#9ca3af';if(st&&st.indexOf('border-color-light')>-1)el.style.borderColor='#374151';if(st&&st.indexOf('background-color-white')>-1)el.style.background='#1e1e2e';if(st&&st.indexOf('background-color,')>-1)el.style.background='#1e1e2e'})},100)}})()
+(function(){var bg=getComputedStyle(document.body).backgroundColor,m=bg.match(/\\d+/g);if(m){var lum=(0.299*+m[0]+0.587*+m[1]+0.114*+m[2])/255;if(lum<0.5)document.documentElement.classList.add('ec-dark')}var s=document.createElement('style');s.textContent='.ec-dark .ec-card,.ec-dark .cbi-section{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important;border-top-color:#374151!important}.ec-dark .ec-table th{border-bottom-color:#333!important;color:#9ca3af!important}.ec-dark .ec-table td{border-bottom-color:#2a2a3e!important}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .cbi-page-actions{border-top-color:#374151!important}.ec-dark .cbi-map>.cbi-map-descr{color:#9ca3af!important}.ec-dark .cbi-value>.cbi-value-title{color:#d1d5db!important}.ec-dark .cbi-value input[type=text],.ec-dark .cbi-value select{border-color:#374151!important;background:#1e1e2e!important;color:#e5e7eb!important}.ec-dark .cbi-value .cbi-input-description{color:#9ca3af!important}.ec-dark .ec-muted{color:#9ca3af!important}';document.head.appendChild(s)})()
 
 function statusDot(color) {
 	return E('span', { 'class': 'ec-dot', 'style': 'background:' + color });
@@ -38,7 +39,7 @@ function statusDot(color) {
 function statCard(value, label, bg, color) {
 	return E('div', { 'class': 'ec-stat', 'style': 'background:' + bg }, [
 		E('div', { 'style': 'font-size:1.6em;font-weight:bold;color:' + color }, value),
-		E('div', { 'style': 'font-size:0.8em;color:var(--text-color-secondary,#666);margin-top:4px' }, label)
+		E('div', { 'class': 'ec-muted', 'style': 'font-size:0.8em;margin-top:4px' }, label)
 	]);
 }
 
@@ -100,7 +101,7 @@ render: function(data) {
 		/* ── 当前节点选择 ── */
 		var stateRows = [];
 		if (stateEntries.length === 0) {
-			stateRows.push(E('tr', {}, E('td', { 'colspan': '2', 'style': 'text-align:center;padding:20px;color:var(--text-color-secondary,#888)' }, '暂无数据')));
+			stateRows.push(E('tr', {}, E('td', { 'colspan': '2', 'class': 'ec-muted', 'style': 'text-align:center;padding:20px' }, '暂无数据')));
 		} else {
 			stateEntries.forEach(function(entry) {
 				var isFailed = failedEntries.some(function(f) { return f.group === entry.group; });
@@ -117,7 +118,7 @@ render: function(data) {
 		/* ── 延迟记录 ── */
 		var latencyRows = [];
 		if (latencyEntries.length === 0) {
-			latencyRows.push(E('tr', {}, E('td', { 'colspan': '4', 'style': 'text-align:center;padding:20px;color:var(--text-color-secondary,#888)' }, '暂无延迟记录')));
+			latencyRows.push(E('tr', {}, E('td', { 'colspan': '4', 'class': 'ec-muted', 'style': 'text-align:center;padding:20px' }, '暂无延迟记录')));
 		} else {
 			latencyEntries.forEach(function(entry) {
 				var delayNum = parseInt(entry.delay, 10);
@@ -134,7 +135,7 @@ render: function(data) {
 		/* ── 切换事件 ── */
 		var eventRows = [];
 		if (healthEvents.length === 0) {
-			eventRows.push(E('tr', {}, E('td', { 'colspan': '3', 'style': 'text-align:center;padding:20px;color:var(--text-color-secondary,#888)' }, '暂无切换事件')));
+			eventRows.push(E('tr', {}, E('td', { 'colspan': '3', 'class': 'ec-muted', 'style': 'text-align:center;padding:20px' }, '暂无切换事件')));
 		} else {
 			healthEvents.forEach(function(entry) {
 				var isRecovery = entry.event === 'node_recovery';
