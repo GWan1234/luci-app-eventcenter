@@ -59,7 +59,6 @@ luci-app-eventcenter/
 │           ├── eventcenter/
 │           │   ├── engine.sh                     # 事件引擎
 │           │   ├── utils.sh                      # 工具函数库
-│           │   ├── aggregate.sh                  # 告警聚合
 │           │   ├── auth_header.sh                # Clash API 认证
 │           │   ├── watcher.sh                    # inotifywait 监听
 │           │   └── sources/
@@ -191,8 +190,6 @@ uci commit eventcenter
 事件源 check() → eventcenter emit
   ↓
 去重检查 (dedup_ttl 窗口内相同事件跳过)
-  ↓
-聚合检查 (aggregate_enable 窗口内重复事件聚合)
   ↓
 写入日志 (log_path, log_max_lines 自动截断)
   ↓

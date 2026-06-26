@@ -4,16 +4,14 @@
 
 # Source utilities
 . /usr/share/eventcenter/utils.sh
-. /usr/share/eventcenter/aggregate.sh
 
 # engine_emit <source> <event> <level> <title> [message]
 # Main event processing pipeline:
 #   1. Check if eventcenter is enabled
 #   2. Dedup check
-#   3. Aggregate check (if enabled)
-#   4. Log the event
-#   5. Format notification message
-#   6. Dispatch to notifiers
+#   3. Log the event
+#   4. Format notification message
+#   5. Dispatch to notifiers
 engine_emit() {
     local _source="$1"
     local _event="$2"
@@ -47,22 +45,10 @@ engine_emit() {
         return 0
     fi
 
-    # 3. Aggregate check (check BEFORE add — add creates the file)
-    local _agg_enable
-    _agg_enable=$(ec_uci_get "global.aggregate_enable" "1")
-    if [ "$_agg_enable" = "1" ]; then
-        if aggregate_check "$_source" "$_event"; then
-            aggregate_add "$_source" "$_event" "$_level" "$_title" "$_message"
-            echo "Event aggregated: $_source:$_event" >&2
-            return 0
-        fi
-        aggregate_add "$_source" "$_event" "$_level" "$_title" "$_message"
-    fi
-
-    # 4. Log the event
+    # 3. Log the event
     log_write "$_source" "$_event" "$_level" "$_title" "$_message"
 
-    # 5. Format and send notification
+    # 4. Format and send notification
     local _formatted
     _formatted=$(format_message "" "$_source" "$_event" "$_level" "$_title" "$_message")
     notify_send "$_formatted"

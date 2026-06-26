@@ -84,12 +84,6 @@ setup_cron_jobs() {
         echo "*/${sub_interval} * * * * /usr/bin/eventcenter check sub" >> "$_tmp_cron"
     fi
 
-    # Aggregate flush
-    local agg_enable
-    agg_enable=$(uci -q get eventcenter.@global[0].aggregate_enable 2>/dev/null)
-    if [ "$agg_enable" = "1" ]; then
-        echo "*/5 * * * * /usr/bin/eventcenter aggregate-flush" >> "$_tmp_cron"
-    fi
 
     crontab "$_tmp_cron" 2>/dev/null
     rm -f "$_tmp_cron"
