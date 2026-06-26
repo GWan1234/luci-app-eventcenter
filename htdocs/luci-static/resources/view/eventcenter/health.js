@@ -152,9 +152,6 @@ render: function(data) {
 
 		/* ── 布局 ── */
 		var content = E('div', { 'style': 'padding:0' }, [
-			E('h2', { 'style': 'margin-bottom:4px' }, '节点健康监测'),
-			E('div', { 'style': 'color:var(--text-color-secondary,#666);font-size:0.9em;margin-bottom:20px' }, '代理组节点状态、延迟和故障切换记录'),
-
 			stats,
 
 			E('div', { 'class': 'ec-card', 'style': 'border-top:3px solid #2563eb' }, [

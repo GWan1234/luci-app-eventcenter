@@ -301,6 +301,35 @@ return view.extend({
 				container.appendChild(btn);
 			}
 
+			/* section 折叠/展开 */
+			var sections = node.querySelectorAll('.cbi-section');
+			sections.forEach(function(sec, idx) {
+				var h3 = sec.querySelector('h3');
+				if (!h3) return;
+				h3.style.cursor = 'pointer';
+				h3.style.userSelect = 'none';
+				h3.style.position = 'relative';
+				h3.style.paddingRight = '40px';
+				var arrow = E('span', { 'style': 'position:absolute;right:16px;top:50%;transform:translateY(-50%);transition:transform .2s;font-size:.8em' }, '▾');
+				h3.appendChild(arrow);
+				var body = [];
+				for (var i = 0; i < sec.children.length; i++) {
+					if (sec.children[i] !== h3) body.push(sec.children[i]);
+				}
+				/* 第一个 section（全局设置）展开，其他折叠 */
+				if (idx > 0) {
+					body.forEach(function(el) { el.style.display = 'none'; });
+					arrow.style.transform = 'translateY(-50%) rotate(-90deg)';
+					sec.dataset.collapsed = '1';
+				}
+				h3.addEventListener('click', function() {
+					var isCollapsed = sec.dataset.collapsed === '1';
+					body.forEach(function(el) { el.style.display = isCollapsed ? '' : 'none'; });
+					arrow.style.transform = isCollapsed ? 'translateY(-50%)' : 'translateY(-50%) rotate(-90deg)';
+					sec.dataset.collapsed = isCollapsed ? '0' : '1';
+				});
+			});
+
 			/* cbi-page-actions 是 cbi-map 的兄弟节点 */
 			var pageActions = node.parentElement ? node.parentElement.querySelector('.cbi-page-actions') : null;
 			if (pageActions) {

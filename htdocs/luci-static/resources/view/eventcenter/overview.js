@@ -87,7 +87,36 @@ return view.extend({
 		var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
 		var cpuC = hData.cpu > 80 ? '#ef4444' : '#3b82f6';
-		var memC = hData.mem > 80 ? '#ef4444' : '#8b5cf6';
+		var memC = hData.mem > 80 ? '#ef4444' : '#3b82f6';
+
+		/* 统计数字 + 服务状态 合并到一个卡片 */
+		var statsAndSvcItems = [
+			E('div', { 'class': 'ec-stat' }, [
+				E('div', { 'class': 'ec-num', 'style': 'color:#3b82f6;font-size:2.2em' }, '' + onDevices),
+				E('div', { 'class': 'ec-lbl' }, '在线设备')
+			]),
+			E('div', { 'class': 'ec-stat' }, [
+				E('div', { 'class': 'ec-num', 'style': 'color:#ef4444;font-size:2.2em' }, '' + offDevices),
+				E('div', { 'class': 'ec-lbl' }, '离线设备')
+			]),
+			E('div', { 'class': 'ec-stat' }, [
+				E('div', { 'class': 'ec-num', 'style': 'color:'+(isRunning?'#22c55e':'#ef4444')+';font-size:2.2em' }, isRunning?'运行中':'已停止'),
+				E('div', { 'class': 'ec-lbl' }, '服务状态')
+			]),
+			E('div', { 'class': 'ec-stat' }, [
+				E('div', { 'class': 'ec-num', 'style': 'color:#3b82f6;font-size:2.2em' }, hData.cpu+'%'),
+				E('div', { 'class': 'ec-lbl' }, 'CPU 负载')
+			])
+		];
+		/* 服务状态条目追加到统计后面 */
+		svcs.forEach(function(svc) {
+			statsAndSvcItems.push(
+				E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--background-color-secondary,#f9fafb);border-radius:8px;min-width:0' }, [
+					E('span', { 'style': 'font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, svc.name),
+					E('span', { 'class': 'ec-tag '+(svc.running?'ec-on':'ec-off') }, svc.running?'运行中':'未启用')
+				])
+			);
+		});
 
 		var content = E('div', { 'class': 'ec-page' }, [
 			E('h2', {}, '概览'),
@@ -108,7 +137,7 @@ return view.extend({
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🌡️ 温度'),
-						E('div', { 'style': 'font-size:2em;font-weight:700;color:'+(hData.temp>75?'#ef4444':'#f59e0b') }, hData.temp>0?hData.temp+'°C':'N/A')
+						E('div', { 'style': 'font-size:2em;font-weight:700;color:'+(hData.temp>75?'#ef4444':'var(--text-color-secondary,#999)') }, hData.temp>0?hData.temp+'°C':'N/A')
 					]),
 					E('div', {}, [
 						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '📡 运行时间'),
@@ -118,37 +147,8 @@ return view.extend({
 			]),
 
 			E('div', { 'class': 'ec-card' }, [
-				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '📈 统计概览'),
-				E('div', { 'class': 'ec-grid' }, [
-					E('div', { 'class': 'ec-stat' }, [
-						E('div', { 'class': 'ec-num', 'style': 'color:#8b5cf6' }, '' + onDevices),
-						E('div', { 'class': 'ec-lbl' }, '在线设备')
-					]),
-					E('div', { 'class': 'ec-stat' }, [
-						E('div', { 'class': 'ec-num', 'style': 'color:#ef4444' }, '' + offDevices),
-						E('div', { 'class': 'ec-lbl' }, '离线设备')
-					]),
-					E('div', { 'class': 'ec-stat' }, [
-						E('div', { 'class': 'ec-num', 'style': 'color:'+(isRunning?'#22c55e':'#ef4444') }, isRunning?'运行中':'已停止'),
-						E('div', { 'class': 'ec-lbl' }, '服务状态')
-					]),
-					E('div', { 'class': 'ec-stat' }, [
-						E('div', { 'class': 'ec-num', 'style': 'color:#3b82f6' }, hData.cpu+'%'),
-						E('div', { 'class': 'ec-lbl' }, 'CPU 负载')
-					])
-				])
-			]),
-
-			E('div', { 'class': 'ec-card' }, [
-				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '🔧 服务状态'),
-				E('div', { 'class': 'ec-grid' },
-					svcs.map(function(svc) {
-						return E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--background-color-secondary,#f9fafb);border-radius:8px;min-width:0' }, [
-							E('span', { 'style': 'font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, svc.name),
-							E('span', { 'class': 'ec-tag '+(svc.running?'ec-on':'ec-off') }, svc.running?'运行中':'未启用')
-						]);
-					})
-				)
+				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '📈 状态概览'),
+				E('div', { 'class': 'ec-grid' }, statsAndSvcItems)
 			]),
 
 			deviceLines.length > 0 ? E('div', { 'class': 'ec-card' }, [

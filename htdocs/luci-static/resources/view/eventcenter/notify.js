@@ -128,26 +128,36 @@ return view.extend({
 		return m.render().then(function(node) {
 			/* 为每个 section 添加边框色和测试按钮 */
 			var sections = node.querySelectorAll('.cbi-section');
-			var channelMap = {
-				'Telegram': 'telegram', 'Ntfy': 'ntfy', '企业微信': 'wechat',
-				'Bark': 'bark', 'PushPlus': 'pushplus',
-				'Server酱³': 'serverchan3', 'Server酱': 'serverchan'
-			};
+			var channelList = [
+					['Server酱³', 'serverchan3'],
+					['Server酱', 'serverchan'],
+					['Telegram', 'telegram'],
+					['Ntfy', 'ntfy'],
+					['企业微信', 'wechat'],
+					['Bark', 'bark'],
+					['PushPlus', 'pushplus']
+				];
 
 			sections.forEach(function(sec) {
 				var title = sec.querySelector('h3');
 				if (!title) return;
 				var text = title.textContent;
-				Object.keys(channelMap).forEach(function(key) {
-					if (text.indexOf(key) !== -1) {
-						sec.style.borderTopColor = BORDER_COLORS[channelMap[key]] || '#6b7280';
+				var matched = null;
+				for (var ci = 0; ci < channelList.length; ci++) {
+					if (text.indexOf(channelList[ci][0]) !== -1) {
+						matched = channelList[ci]; break;
+					}
+				}
+				if (!matched) return;
+				var channelKey = matched[1];
+				sec.style.borderTopColor = BORDER_COLORS[channelKey] || '#6b7280';
 
-						var btn = E('button', { 'class': 'ec-test-btn' }, '发送测试');
+					var btn = E('button', { 'class': 'ec-test-btn' }, '发送测试');
 						btn.addEventListener('click', function() {
 							var el = this;
 							var origText = el.textContent;
 							el.textContent = '测试中...'; el.disabled = true;
-							var scriptPath = SCRIPT_MAP[channelMap[key]];
+							var scriptPath = SCRIPT_MAP[channelKey];
 							if (!scriptPath) {
 								el.textContent = '✗ 无脚本';
 								setTimeout(function() { el.textContent = origText; el.disabled = false; }, 2000);
@@ -169,10 +179,7 @@ return view.extend({
 							});
 						});
 						sec.appendChild(btn);
-					}
-				});
-			});
-
+						});
 			/* 追加保存并重启按钮 */
 			function addRestartBtn(container) {
 				var restartBtn = E('button', { 'class': 'cbi-button-apply', 'style': 'margin-left:8px' }, '保存并重启');
