@@ -3,7 +3,71 @@
 # Monitors OpenClash proxy group selections via Clash API
 # Detects automatic failover and recovery, sends notifications
 
-# (detect_region, region_emoji, prepend_flag are now in utils.sh)
+# Source utilities
+. /usr/share/eventcenter/utils.sh
+
+# --- Region detection (shared with openclash.sh) ---
+
+detect_region() {
+    echo "$1" | awk '{
+        n = $0
+        if      (index(n, "新加坡") || index(n, "狮城"))  print "SG"
+        else if (index(n, "加拿大"))                        print "CA"
+        else if (index(n, "澳大利亚") || index(n, "澳洲"))  print "AU"
+        else if (index(n, "香港"))                          print "HK"
+        else if (index(n, "台湾"))                          print "TW"
+        else if (index(n, "日本"))                          print "JP"
+        else if (index(n, "美国"))                          print "US"
+        else if (index(n, "韩国"))                          print "KR"
+        else if (index(n, "德国"))                          print "DE"
+        else if (index(n, "法国"))                          print "FR"
+        else if (index(n, "英国"))                          print "UK"
+        else if (index(n, "荷兰"))                          print "NL"
+        else if (index(n, "印度"))                          print "IN"
+        else if (index(n, "智利"))                          print "CL"
+        else if (index(n, "巴西"))                          print "BR"
+        else if (index(n, "西班牙"))                        print "ES"
+        else if (index(n, "瑞士"))                          print "CH"
+        else if (index(n, "瑞典"))                          print "SE"
+        else if (index(n, "墨西哥"))                        print "MX"
+        else if (index(n, "俄罗斯"))                        print "RU"
+        else if (index(n, "土耳其"))                        print "TR"
+        else if (index(n, "阿根廷"))                        print "AR"
+        else if (index(n, "意大利"))                        print "IT"
+    }'
+}
+
+region_emoji() {
+    case "$1" in
+        HK) printf '🇭🇰' ;; TW) printf '🇨🇳' ;; JP) printf '🇯🇵' ;;
+        SG) printf '🇸🇬' ;; US) printf '🇺🇸' ;; KR) printf '🇰🇷' ;;
+        DE) printf '🇩🇪' ;; FR) printf '🇫🇷' ;; UK) printf '🇬🇧' ;;
+        NL) printf '🇳🇱' ;; IN) printf '🇮🇳' ;; CL) printf '🇨🇱' ;;
+        BR) printf '🇧🇷' ;; ES) printf '🇪🇸' ;; CH) printf '🇨🇭' ;;
+        SE) printf '🇸🇪' ;; MX) printf '🇲🇽' ;; CA) printf '🇨🇦' ;;
+        AU) printf '🇦🇺' ;; RU) printf '🇷🇺' ;; TR) printf '🇹🇷' ;;
+        AR) printf '🇦🇷' ;; IT) printf '🇮🇹' ;; *) printf '%s' "$1" ;;
+    esac
+}
+
+prepend_flag() {
+    local _name="$1"
+    case "$_name" in
+        🇦*|🇧*|🇨*|🇩*|🇪*|🇫*|🇬*|🇭*|🇮*|🇯*|🇰*|🇱*|🇲*|🇳*|🇴*|🇵*|🇶*|🇷*|🇸*|🇹*|🇺*|🇻*|🇼*|🇽*|🇾*|🇿*)
+            echo "$_name"
+            return
+            ;;
+    esac
+    local _r
+    _r=$(detect_region "$_name")
+    if [ -n "$_r" ]; then
+        local _emoji
+        _emoji=$(region_emoji "$_r")
+        echo "${_emoji} ${_name}"
+    else
+        echo "$_name"
+    fi
+}
 
 # --- Clash API helpers ---
 
@@ -19,6 +83,8 @@ fetch_proxies_json() {
     _url="http://127.0.0.1:${_port}/proxies"
     _hdr=$(/usr/share/eventcenter/auth_header.sh)
     curl -s -m 10 -H "$_hdr" "$_url" 2>/dev/null
+}/proxies"
+    _hdr="Authorization: Bearer ***    curl -s -m 10 -H "$_hdr" "$_url" 2>/dev/null
 }
 
 # test_node_delay <node_name>
@@ -30,7 +96,7 @@ test_node_delay() {
     _timeout=$(ec_uci_get "health.delay_threshold" "3000")
     _hdr=$(/usr/share/eventcenter/auth_header.sh)
 
-    local _encoded=$(printf '%s' "$_node" | sed 's/%/%25/g; s/ /%20/g; s/&/%26/g; s/+/%2B/g; s/,/%2C/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g; s/#/%23/g; s/\[/%5B/g; s/\]/%5D/g; s/{/%7B/g; s/}/%7D/g; s/|/%7C/g; s/\^/%5E/g; s/~/%7E/g; s/\\/%5C/g; s/"/%22/g')
+    local _encoded=$(printf '%s' "$_node" | sed 's/ /%20/g; s/&/%26/g; s/+/%2B/g; s/,/%2C/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g')
 
     _url="http://127.0.0.1:${_port}/proxies/${_encoded}/delay?timeout=${_timeout}&url=${_test_url}"
 

@@ -30,10 +30,10 @@ var st = document.createElement('style'); st.textContent = CARD_CSS; document.he
 
 var BORDER_COLORS = {
 	'telegram': '#0088cc', 'ntfy': '#4caf50', 'wechat': '#07c160',
-	'bark': '#ff6b6b', 'pushplus': '#ff9800', 'serverchan': '#f2925b', 'serverchan3': '#e8b84b'
+	'bark': '#ff6b6b', 'pushplus': '#ff9800',
+	'serverchan': '#e74c3c', 'serverchan3': '#9b59b6'
 };
 
-/* 通知脚本路径映射 — 对应 /usr/bin/notifier_xxx.sh */
 var SCRIPT_MAP = {
 	'telegram': '/usr/bin/notifier_telegram.sh',
 	'ntfy': '/usr/bin/notifier_ntfy.sh',
@@ -108,7 +108,7 @@ return view.extend({
 		o.depends('enable', '1'); o.rmempty = true;
 
 		/* Server酱 */
-		s = m.section(form.NamedSection, 'serverchan', 'notifier', '🧧 Server酱');
+		s = m.section(form.NamedSection, 'serverchan', 'notifier', '📮 Server酱');
 		s.addremove = false; s.anonymous = false;
 		o = s.option(form.Flag, 'enable', '启用');
 		o.default = '0'; o.rmempty = false;
@@ -116,13 +116,13 @@ return view.extend({
 		o.depends('enable', '1'); o.rmempty = true;
 
 		/* Server酱³ */
-		s = m.section(form.NamedSection, 'serverchan3', 'notifier', '🧧 Server酱³');
+		s = m.section(form.NamedSection, 'serverchan3', 'notifier', '📮 Server酱³');
 		s.addremove = false; s.anonymous = false;
 		o = s.option(form.Flag, 'enable', '启用');
 		o.default = '0'; o.rmempty = false;
 		o = s.option(form.Value, 'sendkey', 'SendKey');
 		o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'uid', 'UID', '可从 SendKey 自动提取（sctp&lt;uid&gt;t...）');
+		o = s.option(form.Value, 'title', '消息标题');
 		o.depends('enable', '1'); o.rmempty = true;
 
 		return m.render().then(function(node) {
@@ -130,7 +130,8 @@ return view.extend({
 			var sections = node.querySelectorAll('.cbi-section');
 			var channelMap = {
 				'Telegram': 'telegram', 'Ntfy': 'ntfy', '企业微信': 'wechat',
-				'Bark': 'bark', 'PushPlus': 'pushplus', 'Server酱': 'serverchan', 'Server酱³': 'serverchan3'
+				'Bark': 'bark', 'PushPlus': 'pushplus',
+				'Server酱³': 'serverchan3', 'Server酱': 'serverchan'
 			};
 
 			sections.forEach(function(sec) {

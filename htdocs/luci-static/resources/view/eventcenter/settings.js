@@ -189,9 +189,9 @@ return view.extend({
 		o.default = 'https://www.google.com/generate_204';
 		o.rmempty = false;
 
-		o = s.option(form.Value, 'delay_threshold', '延迟阈值(ms)',
-			'节点延迟超过此阈值判定为不可达');
-		o.default = '3000';
+		o = s.option(form.Value, 'timeout', '超时(秒)',
+			'单次探测超时时间');
+		o.default = '5';
 		o.datatype = 'uinteger';
 		o.rmempty = false;
 
@@ -276,28 +276,28 @@ return view.extend({
 			function addRestartBtn(container) {
 				var btn = E('button', {
 					'class': 'cbi-button cbi-button-apply',
-					'style': 'margin-left:8px;background:#f59e0b;border-color:#f59e0b;color:#fff',
-					'click': function(ev) {
-						ev.preventDefault();
-						btn.textContent = '保存并重启中...';
-						btn.disabled = true;
-						uci.save().then(function() {
-							return uci.apply();
-						}).then(function() {
-							return fs.exec('/etc/init.d/eventcenter', ['restart']);
-						}).then(function(res) {
-							btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
-							btn.style.background = '#22c55e';
-							btn.style.borderColor = '#22c55e';
-							setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-						}).catch(function() {
-							btn.textContent = '✗ 失败';
-							btn.style.background = '#dc2626';
-							btn.style.borderColor = '#dc2626';
-							setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-						});
-					}
+					'style': 'margin-left:8px;background:#f59e0b;border-color:#f59e0b;color:#fff'
 				}, '保存并重启');
+				btn.addEventListener('click', function(ev) {
+					ev.preventDefault();
+					btn.textContent = '保存并重启中...';
+					btn.disabled = true;
+					uci.save().then(function() {
+						return uci.apply();
+					}).then(function() {
+						return fs.exec('/etc/init.d/eventcenter', ['restart']);
+					}).then(function(res) {
+						btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
+						btn.style.background = '#22c55e';
+						btn.style.borderColor = '#22c55e';
+						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					}).catch(function() {
+						btn.textContent = '✗ 失败';
+						btn.style.background = '#dc2626';
+						btn.style.borderColor = '#dc2626';
+						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
+					});
+				});
 				container.appendChild(btn);
 			}
 
