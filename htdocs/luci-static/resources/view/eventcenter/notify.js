@@ -3,30 +3,16 @@
 'require form';
 'require fs';
 'require uci';
+'require view.eventcenter.common as ec';
 
-var CARD_CSS = [
-	'.cbi-map { padding:0 !important; max-width:100%; overflow-x:hidden }',
-	'.cbi-map > h2 { margin-bottom:4px }',
-	'.cbi-map > .cbi-map-descr { color:var(--text-color-secondary, #666);font-size:0.9em;margin-bottom:20px }',
-	'.cbi-section { background:var(--background-color-white, #fff);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:20px;margin-bottom:16px;border-top:3px solid var(--border-color-medium, #6b7280);overflow:hidden }',
-	'.cbi-section > h3 { border-bottom:1px solid var(--border-color-light, #eee);padding-bottom:12px;margin:-20px -20px 16px -20px;padding:16px 20px 12px;font-size:1.05em;font-weight:700 }',
-	'.cbi-value { margin-bottom:10px }',
-	'.cbi-value > .cbi-value-title { font-weight:600;font-size:0.85em;color:var(--text-color, #555);margin-bottom:4px }',
-	'.cbi-value input[type=text], .cbi-value input[type=password], .cbi-value textarea, .cbi-value select { border:1px solid var(--border-color, #ddd);border-radius:6px;padding:8px 10px;background:var(--background-color, #fff);color:var(--text-color, #333);max-width:100% }',
-	'.cbi-value input:focus, .cbi-value select:focus { border-color:#3b82f6;outline:none;box-shadow:0 0 0 2px rgba(59,130,246,0.15) }',
-	'.cbi-value .cbi-input-description { font-size:0.75em;color:var(--text-color-secondary, #888);margin-top:4px }',
-	'.cbi-button-save { background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
-	'.cbi-button-apply { background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
-	'.cbi-page-actions { display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee);flex-wrap:wrap }',
+var PAGE_CSS = [
 	'.ec-test-btn { padding:6px 16px;border:1px solid #3b82f6;color:#3b82f6;background:transparent;border-radius:8px;font-size:.85em;cursor:pointer;font-weight:500;margin-top:8px }',
 	'.ec-test-btn:hover { background:rgba(59,130,246,0.1) }',
-	'.ec-test-btn:disabled { opacity:0.6;cursor:not-allowed }',
-	'@media (prefers-color-scheme: dark) {',
-	'  .cbi-section { background:var(--background-color-white, #1e1e2e);box-shadow:0 2px 8px rgba(0,0,0,.3) }',
-	'  .cbi-section > h3 { border-bottom-color:var(--border-color-light, #333) }',
-	'}'
+	'.ec-test-btn:disabled { opacity:0.6;cursor:not-allowed }'
 ].join(' ');
-var st = document.createElement('style'); st.textContent = CARD_CSS; document.head.appendChild(st);
+
+ec.injectCSS(ec.FORM_CSS);
+ec.injectCSS(PAGE_CSS);
 
 var BORDER_COLORS = {
 	'telegram': '#0088cc', 'ntfy': '#4caf50', 'wechat': '#07c160',
@@ -174,32 +160,14 @@ return view.extend({
 			});
 
 			/* 追加保存并重启按钮 */
-			function addRestartBtn(container) {
-				var restartBtn = E('button', { 'class': 'cbi-button-apply', 'style': 'margin-left:8px' }, '保存并重启');
-				restartBtn.addEventListener('click', function() {
-					var btn = this;
-					btn.textContent = '保存中...'; btn.disabled = true;
-					uci.save().then(function() { return uci.apply(); }).then(function() {
-						btn.textContent = '重启中...';
-						return fs.exec('/etc/init.d/eventcenter', ['restart']);
-					}).then(function(res) {
-						btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
-						btn.style.background = '#22c55e'; btn.style.borderColor = '#22c55e';
-						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-					}).catch(function() {
-						btn.textContent = '✗ 失败'; btn.style.background = '#dc2626'; btn.style.borderColor = '#dc2626';
-						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-					});
-				});
-				container.appendChild(restartBtn);
-			}
+			var restartBtn = ec.createSaveRestartBtn(fs, uci);
 			var pageActions = node.parentElement ? node.parentElement.querySelector('.cbi-page-actions') : null;
 			if (pageActions) {
-				addRestartBtn(pageActions);
+				pageActions.appendChild(restartBtn);
 			} else {
 				setTimeout(function() {
 					var pa = document.querySelector('.cbi-page-actions');
-					if (pa) addRestartBtn(pa);
+					if (pa) pa.appendChild(restartBtn);
 				}, 200);
 			}
 			return node;

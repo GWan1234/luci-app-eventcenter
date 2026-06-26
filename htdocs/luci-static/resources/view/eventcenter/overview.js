@@ -2,8 +2,10 @@
 'require view';
 'require uci';
 'require fs';
+'require view.eventcenter.common as ec';
 
 return view.extend({
+
 	load: function() {
 		return Promise.all([
 			uci.load('eventcenter'),
@@ -64,10 +66,7 @@ return view.extend({
 			{ name: 'Ntfy 通知', running: (ntfyCfg.enable === '1') }
 		];
 
-		var css = [
-			'.ec-page{padding:0;max-width:100%;overflow-x:hidden}',
-			'.ec-card{background:var(--background-color-white, #fff);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:20px;margin-bottom:16px;overflow:hidden}',
-			'.ec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}',
+		var css = ec.CARD_CSS + ' ' + [
 			'.ec-tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.85em;font-weight:600;white-space:nowrap}',
 			'.ec-on{background:#d1fae5;color:#047857}',
 			'.ec-off{background:#fee2e2;color:#b91c1c}',
@@ -78,13 +77,11 @@ return view.extend({
 			'.ec-lbl{font-size:.85em;color:var(--text-color-secondary, #666);margin-top:4px}',
 			'.ec-dev{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-color-light, #f0f0f0)}',
 			'.ec-dev:last-child{border-bottom:none}',
-			'.ec-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee)}',
 			'@media (prefers-color-scheme: dark) {',
-			'  .ec-card{background:var(--background-color-white, #1e1e2e);box-shadow:0 2px 8px rgba(0,0,0,.3)}',
 			'  .ec-dev{border-bottom-color:var(--border-color-light, #333)}',
 			'}'
 		].join(' ');
-		var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+		ec.injectCSS(css);
 
 		var cpuC = hData.cpu > 80 ? '#ef4444' : '#3b82f6';
 		var memC = hData.mem > 80 ? '#ef4444' : '#8b5cf6';
@@ -162,23 +159,13 @@ return view.extend({
 								E('div', { 'style': 'font-weight:600' }, p[0]||'未知'),
 								E('div', { 'style': 'font-size:.8em;color:var(--text-color-secondary,#666)' }, (p[1]||'?')+' / '+(p[2]||'?'))
 							])
-						]);
+					]);
 					})
 				)
 			]) : null
 		].filter(Boolean));
 
-		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply', 'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff' }, '重启服务');
-		restartBtn.addEventListener('click', function() {
-			var btn = this;
-			btn.textContent = '重启中...'; btn.disabled = true;
-			fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
-				btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 失败';
-				btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
-				setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.disabled = false; window.location.reload(); }, 2000);
-			});
-		});
-		var pageActions = E('div', { 'class': 'ec-actions' }, [restartBtn]);
+		var pageActions = E('div', { 'class': 'ec-actions' }, [ec.createRestartBtn(fs)]);
 
 		return E('div', {}, [content, pageActions]);
 	},
