@@ -67,7 +67,7 @@ check() {
 
     # Read tracked MACs from config
     local _tracked_macs
-    _tracked_macs=$(ec_uci_get "device_monitor.track_macs" "")
+    _tracked_macs=$(ec_uci_get "device_monitor.mac" "")
     if [ -z "$_tracked_macs" ]; then
         logger -t eventcenter "device-monitor: no MACs configured for tracking"
         return 0
@@ -192,7 +192,7 @@ check() {
 
 status() {
     local _tracked_macs
-    _tracked_macs=$(ec_uci_get "device_monitor.track_macs" "")
+    _tracked_macs=$(ec_uci_get "device_monitor.mac" "")
 
     echo "=== Device Monitor Status ==="
     echo "Tracked MACs: $(echo "$_tracked_macs" | tr ',' '\n' | wc -l)"
@@ -220,8 +220,12 @@ status() {
 # --- List tracked devices ---
 device_list() {
     local _state_file="/tmp/eventcenter_device_state"
-    if [ -f "$_state_file" ]; then
+    if [ -f "$_state_file" ] && [ -s "$_state_file" ]; then
         cat "$_state_file"
+    else
+        # Fallback: show all devices from DHCP lease file
+        # dhcp.leases format: timestamp MAC IP hostname client-id
+        awk '{mac=toupper($2); ip=$3; printf "%s\t%s\tup\n", mac, ip}' /tmp/dhcp.leases 2>/dev/null | sort -u
     fi
 }
 
