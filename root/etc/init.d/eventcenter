@@ -3,7 +3,7 @@
 START=99
 STOP=10
 
-USE_PROCD=1
+# USE_PROCD=1
 
 WATCHER_PID_FILE="/tmp/eventcenter_watcher.pid"
 
