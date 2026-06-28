@@ -1,7 +1,6 @@
 'use strict';
 'require view';
 'require fs';
-var ecHdr = require('view/eventcenter/ec-header');
 
 /* ── 美化 LuCI 顶部 Tab 菜单 ── */
 ;(function(){
@@ -27,6 +26,10 @@ var ecHdr = require('view/eventcenter/ec-header');
 	].join('\n');
 	document.head.appendChild(s);
 })();
+
+/* ── 页面头部组件 ── */
+if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-time{font-size:.78em;color:#9ca3af}';document.head.appendChild(hs)}
+function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div');h.className='ec-hdr';h.innerHTML='<div class="ec-hdr-left"><h2>'+title+'</h2><p>'+subtitle+'</p></div><div class="ec-hdr-right"><span class="ec-hdr-dot" style="background:'+(isRunning?'#22c55e':'#ef4444')+'"></span><span class="ec-hdr-status">'+(isRunning?'运行中':'已停止')+'</span><span class="ec-hdr-time">最后更新: '+new Date().toLocaleString('zh-CN')+'</span></div>';return h}
 
 return view.extend({
 	load: function() {
@@ -82,7 +85,7 @@ return view.extend({
 		});
 
 		var content = E('div', { 'class': 'ec-page' }, [
-			ecHdr.makeHeader('日志', '系统运行日志，最近 100 条记录', true),
+			ecMakeHdr('日志', '系统运行日志，最近 100 条记录', true),
 
 			E('div', { 'class': 'ec-card' }, [
 				E('div', { 'style': 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px' }, [
