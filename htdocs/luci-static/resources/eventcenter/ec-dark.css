@@ -1,0 +1,130 @@
+/* ec-dark.css — EventCenter 暗夜模式 */
+/* 由 JS loader 检测暗夜模式后添加 .ec-dark 类到 <html> 触发 */
+
+/* ── 页面头部 ── */
+.ec-dark .ec-hdr{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-hdr-left h2{color:#e2e8f0!important}
+.ec-dark .ec-hdr-left p{color:#94a3b8!important}
+.ec-dark .ec-hdr-status{color:#e2e8f0!important}
+.ec-dark .ec-hdr-time{color:#94a3b8!important}
+.ec-dark .ec-hdr-refresh{color:#94a3b8!important}
+.ec-dark .ec-hdr-refresh:hover{background:#252536!important;color:#e2e8f0!important}
+
+/* ── Tab 菜单 ── */
+.ec-dark ul.tabs>li>a{color:#94a3b8!important;background:#252536!important}
+.ec-dark ul.tabs>li>a:hover{color:#a78bfa!important;background:#2d2d44!important}
+
+/* ── 概览页 — 摘要卡片 ── */
+.ec-dark .ec-summary-card{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-summary-label{color:#94a3b8!important}
+.ec-dark .ec-summary-value{color:#e2e8f0!important}
+.ec-dark .ec-summary-sub{color:#64748b!important}
+
+/* ── 通用卡片 ── */
+.ec-dark .ec-card{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-card-header{border-bottom-color:#2a2a3d!important}
+.ec-dark .ec-card-title{color:#e2e8f0!important}
+.ec-dark .ec-card-link{color:#a78bfa!important}
+
+/* ── 概览页 — 指标 ── */
+.ec-dark .ec-metric-label{color:#94a3b8!important}
+.ec-dark .ec-metric-value{color:#e2e8f0!important}
+
+/* ── 概览页 — 存储 ── */
+.ec-dark .ec-storage{border-top-color:#2a2a3d!important}
+.ec-dark .ec-storage-label{color:#94a3b8!important}
+.ec-dark .ec-storage-bar{background:#2a2a3d!important}
+.ec-dark .ec-storage-text{color:#94a3b8!important}
+
+/* ── 概览页 — 服务状态 ── */
+.ec-dark .ec-svc-item{background:#252536!important;border-color:#2a2a3d!important}
+.ec-dark .ec-svc-name{color:#e2e8f0!important}
+.ec-dark .ec-svc-status{color:#94a3b8!important}
+
+/* ── 概览页 — 事件 ── */
+.ec-dark .ec-event{background:#252536!important;border-color:#2a2a3d!important}
+.ec-dark .ec-event-title{color:#e2e8f0!important}
+.ec-dark .ec-event-desc{color:#94a3b8!important}
+.ec-dark .ec-event-time{color:#94a3b8!important}
+
+/* ── 概览页 — 设备 ── */
+.ec-dark .ec-device{background:#252536!important;border-color:#2a2a3d!important}
+.ec-dark .ec-device-mac{color:#e2e8f0!important}
+.ec-dark .ec-device-ip{color:#94a3b8!important}
+
+/* ── 节点健康页 — 指标卡片 ── */
+.ec-dark .ec-metric-card{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-metric-sub{color:#64748b!important}
+
+/* ── 节点健康页 — 面板 ── */
+.ec-dark .ec-panel{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-panel-head{border-bottom-color:#2a2a3d!important}
+.ec-dark .ec-panel-head h3{color:#e2e8f0!important}
+.ec-dark .ec-panel-link{color:#a78bfa!important}
+
+/* ── 表格 ── */
+.ec-dark .ec-tbl th{color:#94a3b8!important;background:#1a1a2e!important;border-bottom-color:#2a2a3d!important}
+.ec-dark .ec-tbl td{color:#e2e8f0!important;border-bottom-color:#2a2a3d!important}
+.ec-dark .ec-tbl tr:hover{background:#252536!important}
+
+/* ── 设置页 ── */
+.ec-dark .ec-settings-card{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-settings-head{border-bottom-color:#2a2a3d!important}
+.ec-dark .ec-settings-title{color:#e2e8f0!important}
+.ec-dark .ec-settings-desc{color:#94a3b8!important}
+.ec-dark .ec-settings-arrow{color:#94a3b8!important}
+.ec-dark .ec-settings-status{color:#94a3b8!important}
+.ec-dark .ec-field-label{color:#e2e8f0!important}
+.ec-dark .ec-field-desc{color:#94a3b8!important}
+.ec-dark .ec-field input[type=text],
+.ec-dark .ec-field input[type=password],
+.ec-dark .ec-field select{background:#1a1a2e!important;border-color:#333348!important;color:#e2e8f0!important}
+.ec-dark .ec-field input:focus,
+.ec-dark .ec-field select:focus{background:#252536!important;border-color:#7c3aed!important}
+.ec-dark .ec-toggle-label{color:#e2e8f0!important}
+.ec-dark .ec-toggle{background:#333348!important}
+.ec-dark .ec-actions-bar{border-top-color:#2a2a3d!important}
+.ec-dark .ec-btn-ghost{background:#252536!important;color:#94a3b8!important}
+.ec-dark .ec-btn-ghost:hover{background:#2d2d44!important;color:#e2e8f0!important}
+
+/* ── 日志页 ── */
+.ec-dark .ec-page .ec-card{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}
+.ec-dark .ec-entry{border-bottom-color:#2a2a3d!important}
+.ec-dark .ec-time{color:#94a3b8!important}
+.ec-dark .ec-msg{color:#e2e8f0!important}
+.ec-dark .ec-muted{color:#94a3b8!important}
+.ec-dark .ec-actions{border-top-color:#2a2a3d!important}
+
+/* ── 通知渠道页 — 卡片和输入框 ── */
+.ec-dark .ec-notify-card{background:#1e1e2e!important;border-color:#2a2a3d!important}
+.ec-dark .ec-notify-card input[type=text],
+.ec-dark .ec-notify-card input[type=password]{background:#1a1a2e!important;border-color:#333348!important;color:#e2e8f0!important}
+.ec-dark .ec-notify-card label{color:#94a3b8!important}
+.ec-dark .ec-notify-card strong{color:#e2e8f0!important}
+.ec-dark .ec-notify-info{background:#1a2a3a!important;border-color:#1e3a5f!important;color:#93c5fd!important}
+.ec-dark .ec-notify-preview{filter:brightness(.75) saturate(.85)}
+
+/* ── 通用文本 ── */
+.ec-dark .ec-footer{color:#64748b!important}
+.ec-dark h3{color:#e2e8f0!important}
+
+/* ── 滚动条 ── */
+.ec-dark .ec-card-body::-webkit-scrollbar-track{background:#1a1a2e!important}
+.ec-dark .ec-card-body::-webkit-scrollbar-thumb{background:#333348!important}
+.ec-dark .ec-card-body::-webkit-scrollbar-thumb:hover{background:#4a4a5e!important}
+.ec-dark .ec-log::-webkit-scrollbar-track{background:#1a1a2e!important}
+.ec-dark .ec-log::-webkit-scrollbar-thumb{background:#333348!important}
+
+/* ── LuCI 框架覆盖（确保暗夜下不漏白）── */
+.ec-dark .cbi-page-actions{background:#1e1e2e!important;border-top-color:#2a2a3d!important}
+
+/* ── 表格行背景（补充覆盖）── */
+.ec-dark .ec-tbl tbody tr{background:#1e1e2e!important}
+.ec-dark .ec-tbl tbody tr:nth-child(even){background:#1a1a2e!important}
+
+/* ── 通知渠道 — 输入框（强制覆盖内联样式）── */
+.ec-dark input[type=text][readonly],
+.ec-dark input[type=password][readonly]{background:#1a1a2e!important;border-color:#333348!important;color:#e2e8f0!important}
+
+/* ── 通知渠道 — 预览区域加深 ── */
+.ec-dark .ec-notify-preview{filter:brightness(.6) saturate(.7)!important}

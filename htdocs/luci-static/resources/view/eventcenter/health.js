@@ -4,11 +4,32 @@
 'require fs';
 'require uci';
 
+/* ── 统一 Tab 菜单样式（v3 — 胶囊风格 + MutationObserver 防闪烁）── */
+;(function(){
+	if(document.getElementById('ec-tab-css-v3'))return;
+	var s=document.createElement('style');s.id='ec-tab-css-v3';
+	s.textContent=[
+		'ul.tabs:not(.ec-ready){visibility:hidden!important}',
+		'ul.tabs.ec-ready{visibility:visible!important;display:flex!important;gap:6px!important;padding:0!important;margin:0 0 16px!important;background:transparent!important;border:none!important;box-shadow:none!important;flex-wrap:wrap!important}',
+		'ul.tabs::before{display:none!important}',
+		'ul.tabs>li{margin:0!important;border:none!important;background:transparent!important;border-radius:0!important}',
+		'ul.tabs>li>a{display:inline-block!important;padding:10px 22px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-radius:20px!important;background:#f3f4f6!important;border:1px solid transparent!important}',
+		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#ede9fe!important}',
+		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#fff!important;background:#7c3aed!important;font-weight:600!important;border-color:#7c3aed!important;box-shadow:0 2px 8px rgba(124,58,237,.25)!important}'
+	].join('\n');
+	document.head.appendChild(s);
+	/* MutationObserver: tab 插入 DOM 时立即标记 ec-ready，浏览器 repaint 前完成 */
+	function markReady(n){if(n.nodeType!==1)return;if(n.tagName==='UL'&&n.classList.contains('tabs'))n.classList.add('ec-ready');var q=n.querySelectorAll?n.querySelectorAll('ul.tabs'):[];for(var i=0;i<q.length;i++)q[i].classList.add('ec-ready')}
+	var obs=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var nn=muts[i].addedNodes;for(var j=0;j<nn.length;j++)markReady(nn[j])}});
+	obs.observe(document.documentElement,{childList:true,subtree:true});
+	markReady(document.documentElement);
+})();
 
-
+/* ── 暗夜模式 ── */
+;(function(){if(document.getElementById('ec-dark-css'))return;var lk=document.createElement('link');lk.id='ec-dark-css';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-dark.css';document.head.appendChild(lk);function ck(){var bg=getComputedStyle(document.body).backgroundColor;var m=bg.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);var dk=m&&((parseInt(m[1])+parseInt(m[2])+parseInt(m[3]))/3<80);if(dk||document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');else document.documentElement.classList.remove('ec-dark')}ck();window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',ck)})();
 
 /* ── 页面头部组件 ── */
-if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.ec-hdr-top{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-bottom{display:flex;align-items:center;gap:6px}.ec-hdr-time{font-size:.78em;color:#9ca3af}.ec-hdr-refresh{background:none;border:none;cursor:pointer;font-size:1em;color:#9ca3af;padding:2px;border-radius:4px;transition:all .15s}.ec-hdr-refresh:hover{background:#f3f4f6;color:#374151}@media(max-width:768px){.ec-hdr{flex-direction:column;align-items:flex-start;gap:8px}.ec-hdr-right{align-items:flex-start}}';document.head.appendChild(hs)}
+if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.ec-hdr-top{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-bottom{display:flex;align-items:center;gap:6px}.ec-hdr-time{font-size:.78em;color:#9ca3af}.ec-hdr-refresh{background:none;border:none;cursor:pointer;font-size:1em;color:#9ca3af;padding:2px;border-radius:4px;transition:all .15s}.ec-hdr-refresh:hover{background:#f3f4f6;color:#374151}';document.head.appendChild(hs)}
 function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div');h.className='ec-hdr';h.innerHTML='<div class="ec-hdr-left"><h2>'+title+'</h2><p>'+subtitle+'</p></div><div class="ec-hdr-right"><div class="ec-hdr-top"><span class="ec-hdr-dot" style="background:'+(isRunning?'#22c55e':'#ef4444')+'"></span><span class="ec-hdr-status">'+(isRunning?'运行中':'已停止')+'</span></div><div class="ec-hdr-bottom"><span class="ec-hdr-time">最后更新: '+new Date().toLocaleString('zh-CN')+'</span><button class="ec-hdr-refresh" title="刷新">⟳</button></div></div>';h.querySelector('.ec-hdr-refresh').addEventListener('click',function(){window.location.reload()});return h}
 
 /* ── 页面专属 CSS ── */
@@ -51,8 +72,7 @@ function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div')
 		'.ec-delay-mid{color:#d97706;font-weight:600}',
 		'.ec-delay-bad{color:#dc2626;font-weight:600}',
 
-		'.ec-muted{color:#9ca3af}',
-		'@media(max-width:768px){.ec-panel-body{overflow-x:auto;-webkit-overflow-scrolling:touch}.ec-tbl{min-width:600px}}'
+		'.ec-muted{color:#9ca3af}'
 	].join('\n');
 	document.head.appendChild(s);
 })();
@@ -268,7 +288,27 @@ render: function(data) {
 	sec.render=function(){return content;};
 
 	return m.render().then(function(node){
-		node.appendChild(E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理'));
+		setTimeout(function(){
+			var pa=document.querySelector('.cbi-page-actions');
+			if(pa&&!pa.querySelector('.ec-restart-btn')){
+				var btn=E('button',{'class':'cbi-button-apply ec-restart-btn','style':'margin-left:8px'},'保存并重启');
+				btn.addEventListener('click',function(){
+					var b=this;b.textContent='保存中...';b.disabled=true;
+					uci.save().then(function(){return uci.apply();}).then(function(){
+						b.textContent='重启中...';
+						return fs.exec('/etc/init.d/eventcenter',['restart']);
+					}).then(function(r){
+						b.textContent=(r&&r.code===0)?'✓ 已完成':'✓ 已保存';
+						b.style.background='#22c55e';
+						setTimeout(function(){b.textContent='保存并重启';b.style.background='#f59e0b';b.disabled=false;},3000);
+					}).catch(function(){
+						b.textContent='✗ 失败';b.style.background='#dc2626';
+						setTimeout(function(){b.textContent='保存并重启';b.style.background='#f59e0b';b.disabled=false;},3000);
+					});
+				});
+				pa.appendChild(btn);
+			}
+		},300);
 		return node;
 	});
 },
