@@ -84,11 +84,18 @@ return view.extend({
 
 		var footer=E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理');
 
+		// 标准 LuCI 操作栏
+		var actionsBar=E('div',{'class':'ec-actions-bar'},[
+			E('button',{'class':'cbi-button cbi-button-reset','onclick':function(){window.location.reload()}},'复位'),
+			E('button',{'class':'cbi-button cbi-button-apply','onclick':function(){window.location.href='/cgi-bin/luci/admin/services/eventcenter/settings'}},'保存并应用')
+		]);
+
 		return E('div', {}, [
 			ecMakeHdr('概述', '系统概览与实时状态', isRunning),
 			E('div',{'class':'ec-summary'},summaryEls),
 			E('div',{'class':'ec-row'},[resourceCard,serviceCard]),
 			E('div',{'class':'ec-row'},[eventsCard,deviceCard]),
+			actionsBar,
 			footer
 		]);
 	}

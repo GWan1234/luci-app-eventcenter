@@ -43,16 +43,7 @@ function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div')
 		'.ec-toggle.on{background:#7c3aed}',
 		'.ec-toggle::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}',
 		'.ec-toggle.on::after{transform:translateX(18px)}',
-		'.ec-actions-bar{display:flex;justify-content:flex-end;gap:10px;padding:16px 0;margin-top:8px;border-top:1px solid #e5e7eb}',
-		'.ec-btn{padding:9px 24px;border-radius:8px;font-size:.84em;font-weight:600;cursor:pointer;transition:all .15s;border:none}',
-		'.ec-btn-primary{background:#7c3aed;color:#fff;box-shadow:0 2px 6px rgba(124,58,237,.25)}',
-		'.ec-btn-primary:hover{background:#6d28d9;box-shadow:0 4px 12px rgba(124,58,237,.35)}',
-		'.ec-btn-warning{background:#f59e0b;color:#fff;box-shadow:0 2px 6px rgba(245,158,11,.25)}',
-		'.ec-btn-warning:hover{background:#d97706}',
-		'.ec-btn-ghost{background:#f3f4f6;color:#6b7280}',
-		'.ec-btn-ghost:hover{background:#e5e7eb;color:#374151}',
-		/* 隐藏 LuCI 自动生成的按钮 */
-		'.cbi-page-actions{display:none!important}'
+		'.ec-actions-bar{display:flex;justify-content:flex-end;gap:10px;padding:16px 0;margin-top:8px;border-top:1px solid #e5e7eb}'
 	].join('\n');
 	document.head.appendChild(s);
 })();
@@ -237,10 +228,10 @@ return view.extend({
 			grid.appendChild(buildModuleCard(mod, idx));
 		});
 
-		// 操作栏
-		var saveBtn = E('button', { 'class': 'ec-btn ec-btn-primary' }, '保存');
-		var restartBtn = E('button', { 'class': 'ec-btn ec-btn-warning' }, '保存并重启');
-		var resetBtn = E('button', { 'class': 'ec-btn ec-btn-ghost' }, '重置');
+		// 操作栏（标准 LuCI 按钮）
+		var saveBtn = E('button', { 'class': 'cbi-button cbi-button-save' }, '保存');
+		var applyBtn = E('button', { 'class': 'cbi-button cbi-button-apply' }, '保存并应用');
+		var resetBtn = E('button', { 'class': 'cbi-button cbi-button-reset' }, '复位');
 
 		saveBtn.addEventListener('click', function() {
 			// 应用本地值到 UCI
@@ -261,25 +252,25 @@ return view.extend({
 			});
 		});
 
-		restartBtn.addEventListener('click', function() {
+		applyBtn.addEventListener('click', function() {
 			// 先保存再重启
 			Object.keys(localValues).forEach(function(key) {
 				var parts = key.split('.');
 				uci.set('eventcenter', parts[0], parts[1], localValues[key]);
 			});
-			restartBtn.textContent = '保存中...';
-			restartBtn.disabled = true;
+			applyBtn.textContent = '保存中...';
+			applyBtn.disabled = true;
 			uci.save().then(function() { return uci.apply(); }).then(function() {
-				restartBtn.textContent = '重启中...';
+				applyBtn.textContent = '重启中...';
 				return fs.exec('/etc/init.d/eventcenter', ['restart']);
 			}).then(function(res) {
-				restartBtn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
-				restartBtn.style.background = '#22c55e';
-				setTimeout(function() { restartBtn.textContent = '保存并重启'; restartBtn.style.background = ''; restartBtn.disabled = false; }, 3000);
+				applyBtn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
+				applyBtn.style.background = '#22c55e';
+				setTimeout(function() { applyBtn.textContent = '保存并应用'; applyBtn.style.background = ''; applyBtn.disabled = false; }, 3000);
 			}).catch(function() {
-				restartBtn.textContent = '✗ 失败';
-				restartBtn.style.background = '#dc2626';
-				setTimeout(function() { restartBtn.textContent = '保存并重启'; restartBtn.style.background = ''; restartBtn.disabled = false; }, 3000);
+				applyBtn.textContent = '✗ 失败';
+				applyBtn.style.background = '#dc2626';
+				setTimeout(function() { applyBtn.textContent = '保存并应用'; applyBtn.style.background = ''; applyBtn.disabled = false; }, 3000);
 			});
 		});
 
@@ -287,7 +278,7 @@ return view.extend({
 			window.location.reload();
 		});
 
-		var actionsBar = E('div', { 'class': 'ec-actions-bar' }, [resetBtn, saveBtn, restartBtn]);
+		var actionsBar = E('div', { 'class': 'ec-actions-bar' }, [resetBtn, saveBtn, applyBtn]);
 
 		// 组装页面
 		var container = E('div', {}, [

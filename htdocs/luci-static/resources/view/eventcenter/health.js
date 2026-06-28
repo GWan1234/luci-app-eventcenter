@@ -268,8 +268,8 @@ render: function(data) {
 	return m.render().then(function(node){
 		setTimeout(function(){
 			var pa=document.querySelector('.cbi-page-actions');
-			if(pa&&!pa.querySelector('.ec-restart-btn')){
-				var btn=E('button',{'class':'cbi-button-apply ec-restart-btn','style':'margin-left:8px'},'保存并重启');
+			if(pa&&!pa.querySelector('.ec-apply-btn')){
+				var btn=E('button',{'class':'cbi-button cbi-button-apply ec-apply-btn'},'保存并应用');
 				btn.addEventListener('click',function(){
 					var b=this;b.textContent='保存中...';b.disabled=true;
 					uci.save().then(function(){return uci.apply();}).then(function(){
@@ -278,10 +278,10 @@ render: function(data) {
 					}).then(function(r){
 						b.textContent=(r&&r.code===0)?'✓ 已完成':'✓ 已保存';
 						b.style.background='#22c55e';
-						setTimeout(function(){b.textContent='保存并重启';b.style.background='#f59e0b';b.disabled=false;},3000);
+						setTimeout(function(){b.textContent='保存并应用';b.style.background='';b.disabled=false;},3000);
 					}).catch(function(){
 						b.textContent='✗ 失败';b.style.background='#dc2626';
-						setTimeout(function(){b.textContent='保存并重启';b.style.background='#f59e0b';b.disabled=false;},3000);
+						setTimeout(function(){b.textContent='保存并应用';b.style.background='';b.disabled=false;},3000);
 					});
 				});
 				pa.appendChild(btn);

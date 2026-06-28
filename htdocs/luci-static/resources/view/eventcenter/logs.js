@@ -90,7 +90,7 @@ return view.extend({
 			])
 		]);
 
-		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply', 'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff' }, '重启服务');
+		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply' }, '重启服务');
 		restartBtn.addEventListener('click', function() {
 			var btn = this;
 			btn.textContent = '重启中...'; btn.disabled = true;
