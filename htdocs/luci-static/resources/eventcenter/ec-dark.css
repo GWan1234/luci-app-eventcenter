@@ -10,10 +10,6 @@
 .ec-dark .ec-hdr-refresh{color:#94a3b8!important}
 .ec-dark .ec-hdr-refresh:hover{background:#252536!important;color:#e2e8f0!important}
 
-/* ── Tab 菜单 ── */
-.ec-dark ul.tabs>li>a{color:#94a3b8!important;background:#252536!important}
-.ec-dark ul.tabs>li>a:hover{color:#a78bfa!important;background:#2d2d44!important}
-
 /* ── 概览页 — 摘要卡片 ── */
 .ec-dark .ec-summary-card{background:#1e1e2e!important;border-color:#2a2a3d!important}
 .ec-dark .ec-summary-label{color:#94a3b8!important}
@@ -131,3 +127,6 @@
 
 /* ── h3 标题背景（Argon dark.css 设置了 #333333，我们统一为卡片色）── */
 .ec-dark h3{background:#1e1e2e!important;color:#e2e8f0!important}
+
+/* ── h2 标题背景（Argon dark.css 设了 background:#333333，覆盖掉）── */
+.ec-dark h2{background:transparent!important}
