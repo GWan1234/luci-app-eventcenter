@@ -95,7 +95,7 @@ get_temperature() {
 get_disk_usage() {
     # Returns usage% and path for each mounted filesystem (excluding tmpfs/dev)
     df -h 2>/dev/null | awk '
-    NR > 1 && !/^(tmpfs|devtmpfs|overlay)/ && !/\/dev\/loop/ {
+    NR > 1 && !/^(tmpfs|devtmpfs|overlay)/ && !/\/dev\/(loop|root)/ {
         gsub(/%/, "", $5)
         if ($5+0 > 0)
             printf "%s\t%s\t%s\t%s\n", $5, $6, $3, $2
