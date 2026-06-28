@@ -2,7 +2,7 @@
 'require view';
 'require uci';
 'require dom';
-if(!document.getElementById('ec-tabs-css-link')){var lk=document.createElement('link');lk.id='ec-tabs-css-link';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-tabs.css';document.head.appendChild(lk)}
+
 
 
 
@@ -166,13 +166,6 @@ return view.extend({
         });
 
         container.appendChild(E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理'));
-
-        // 标准 LuCI 操作栏
-        var actionsBar = E('div', { 'class': 'ec-actions-bar' }, [
-            E('button', { 'class': 'cbi-button cbi-button-reset', 'onclick': function() { window.location.reload(); } }, '复位'),
-            E('button', { 'class': 'cbi-button cbi-button-apply', 'onclick': function() { window.location.href = '/cgi-bin/luci/admin/services/eventcenter/settings'; } }, '保存并应用')
-        ]);
-        container.appendChild(actionsBar);
 
         return container;
     },

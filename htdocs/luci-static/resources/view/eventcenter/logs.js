@@ -1,7 +1,7 @@
 'use strict';
 'require view';
 'require fs';
-if(!document.getElementById('ec-tabs-css-link')){var lk=document.createElement('link');lk.id='ec-tabs-css-link';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-tabs.css';document.head.appendChild(lk)}
+
 
 
 
@@ -91,18 +91,6 @@ return view.extend({
 			])
 		]);
 
-		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply' }, '重启服务');
-		restartBtn.addEventListener('click', function() {
-			var btn = this;
-			btn.textContent = '重启中...'; btn.disabled = true;
-			fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
-				btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 失败';
-				btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
-				setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.disabled = false; }, 2000);
-			});
-		});
-		var pageActions = E('div', { 'class': 'ec-actions' }, [restartBtn]);
-
-		return E('div', {}, [content, pageActions, E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理')]);
+		return E('div', {}, [content, E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理')]);
 	},
 });

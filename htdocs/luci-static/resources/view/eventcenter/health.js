@@ -3,7 +3,7 @@
 'require form';
 'require fs';
 'require uci';
-if(!document.getElementById('ec-tabs-css-link')){var lk=document.createElement('link');lk.id='ec-tabs-css-link';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-tabs.css';document.head.appendChild(lk)}
+
 
 
 
@@ -267,41 +267,6 @@ render: function(data) {
 	sec.render=function(){return content;};
 
 	return m.render().then(function(node){
-		// 标准 LuCI 操作栏
-		var actionsBar=E('div',{'class':'ec-actions-bar'},[
-			E('button',{'class':'cbi-button cbi-button-reset'},'复位'),
-			E('button',{'class':'cbi-button cbi-button-save'},'保存'),
-			E('button',{'class':'cbi-button cbi-button-apply ec-apply-btn'},'保存并应用')
-		]);
-		// 复位
-		actionsBar.children[0].addEventListener('click',function(){window.location.reload()});
-		// 保存
-		actionsBar.children[1].addEventListener('click',function(){
-			var b=this;b.textContent='保存中...';b.disabled=true;
-			uci.save().then(function(){return uci.apply()}).then(function(){
-				b.textContent='✓ 已保存';b.style.background='#22c55e';
-				setTimeout(function(){b.textContent='保存';b.style.background='';b.disabled=false;},2000);
-			}).catch(function(){
-				b.textContent='✗ 失败';b.style.background='#dc2626';
-				setTimeout(function(){b.textContent='保存';b.style.background='';b.disabled=false;},2000);
-			});
-		});
-		// 保存并应用
-		actionsBar.children[2].addEventListener('click',function(){
-			var b=this;b.textContent='保存中...';b.disabled=true;
-			uci.save().then(function(){return uci.apply()}).then(function(){
-				b.textContent='重启中...';
-				return fs.exec('/etc/init.d/eventcenter',['restart']);
-			}).then(function(r){
-				b.textContent=(r&&r.code===0)?'✓ 已完成':'✓ 已保存';
-				b.style.background='#22c55e';
-				setTimeout(function(){b.textContent='保存并应用';b.style.background='';b.disabled=false;},3000);
-			}).catch(function(){
-				b.textContent='✗ 失败';b.style.background='#dc2626';
-				setTimeout(function(){b.textContent='保存并应用';b.style.background='';b.disabled=false;},3000);
-			});
-		});
-		node.appendChild(actionsBar);
 		node.appendChild(E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理'));
 		return node;
 	});

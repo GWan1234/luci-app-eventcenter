@@ -2,7 +2,7 @@
 'require view';
 'require uci';
 'require fs';
-if(!document.getElementById('ec-tabs-css-link')){var lk=document.createElement('link');lk.id='ec-tabs-css-link';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-tabs.css';document.head.appendChild(lk)}
+
 if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.ec-hdr-top{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-bottom{display:flex;align-items:center;gap:6px}.ec-hdr-time{font-size:.78em;color:#9ca3af}.ec-hdr-refresh{background:none;border:none;cursor:pointer;font-size:1em;color:#9ca3af;padding:2px;border-radius:4px;transition:all .15s}.ec-hdr-refresh:hover{background:#f3f4f6;color:#374151}';document.head.appendChild(hs)}
 function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div');h.className='ec-hdr';h.innerHTML='<div class="ec-hdr-left"><h2>'+title+'</h2><p>'+subtitle+'</p></div><div class="ec-hdr-right"><div class="ec-hdr-top"><span class="ec-hdr-dot" style="background:'+(isRunning?'#22c55e':'#ef4444')+'"></span><span class="ec-hdr-status">'+(isRunning?'运行中':'已停止')+'</span></div><div class="ec-hdr-bottom"><span class="ec-hdr-time">最后更新: '+new Date().toLocaleString('zh-CN')+'</span><button class="ec-hdr-refresh" title="刷新">⟳</button></div></div>';h.querySelector('.ec-hdr-refresh').addEventListener('click',function(){window.location.reload()});return h}
 
@@ -85,18 +85,11 @@ return view.extend({
 
 		var footer=E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理');
 
-		// 标准 LuCI 操作栏
-		var actionsBar=E('div',{'class':'ec-actions-bar'},[
-			E('button',{'class':'cbi-button cbi-button-reset','onclick':function(){window.location.reload()}},'复位'),
-			E('button',{'class':'cbi-button cbi-button-apply','onclick':function(){window.location.href='/cgi-bin/luci/admin/services/eventcenter/settings'}},'保存并应用')
-		]);
-
 		return E('div', {}, [
 			ecMakeHdr('概述', '系统概览与实时状态', isRunning),
 			E('div',{'class':'ec-summary'},summaryEls),
 			E('div',{'class':'ec-row'},[resourceCard,serviceCard]),
 			E('div',{'class':'ec-row'},[eventsCard,deviceCard]),
-			actionsBar,
 			footer
 		]);
 	}

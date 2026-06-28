@@ -2,7 +2,7 @@
 'require view';
 'require uci';
 'require fs';
-if(!document.getElementById('ec-tabs-css-link')){var lk=document.createElement('link');lk.id='ec-tabs-css-link';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-tabs.css';document.head.appendChild(lk)}
+
 
 
 
@@ -43,8 +43,7 @@ function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div')
 		'.ec-toggle{width:42px;height:24px;border-radius:12px;background:#d1d5db;position:relative;cursor:pointer;transition:background .2s}',
 		'.ec-toggle.on{background:#7c3aed}',
 		'.ec-toggle::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}',
-		'.ec-toggle.on::after{transform:translateX(18px)}',
-		'.ec-actions-bar{display:flex;justify-content:flex-end;gap:10px;padding:16px 0;margin-top:8px;border-top:1px solid #e5e7eb}'
+		'.ec-toggle.on::after{transform:translateX(18px)}'
 	].join('\n');
 	document.head.appendChild(s);
 })();
@@ -229,63 +228,10 @@ return view.extend({
 			grid.appendChild(buildModuleCard(mod, idx));
 		});
 
-		// 操作栏（标准 LuCI 按钮）
-		var saveBtn = E('button', { 'class': 'cbi-button cbi-button-save' }, '保存');
-		var applyBtn = E('button', { 'class': 'cbi-button cbi-button-apply' }, '保存并应用');
-		var resetBtn = E('button', { 'class': 'cbi-button cbi-button-reset' }, '复位');
-
-		saveBtn.addEventListener('click', function() {
-			// 应用本地值到 UCI
-			Object.keys(localValues).forEach(function(key) {
-				var parts = key.split('.');
-				uci.set('eventcenter', parts[0], parts[1], localValues[key]);
-			});
-			saveBtn.textContent = '保存中...';
-			saveBtn.disabled = true;
-			uci.save().then(function() { return uci.apply(); }).then(function() {
-				saveBtn.textContent = '✓ 已保存';
-				saveBtn.style.background = '#22c55e';
-				setTimeout(function() { saveBtn.textContent = '保存'; saveBtn.style.background = ''; saveBtn.disabled = false; }, 2000);
-			}).catch(function() {
-				saveBtn.textContent = '✗ 失败';
-				saveBtn.style.background = '#dc2626';
-				setTimeout(function() { saveBtn.textContent = '保存'; saveBtn.style.background = ''; saveBtn.disabled = false; }, 2000);
-			});
-		});
-
-		applyBtn.addEventListener('click', function() {
-			// 先保存再重启
-			Object.keys(localValues).forEach(function(key) {
-				var parts = key.split('.');
-				uci.set('eventcenter', parts[0], parts[1], localValues[key]);
-			});
-			applyBtn.textContent = '保存中...';
-			applyBtn.disabled = true;
-			uci.save().then(function() { return uci.apply(); }).then(function() {
-				applyBtn.textContent = '重启中...';
-				return fs.exec('/etc/init.d/eventcenter', ['restart']);
-			}).then(function(res) {
-				applyBtn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
-				applyBtn.style.background = '#22c55e';
-				setTimeout(function() { applyBtn.textContent = '保存并应用'; applyBtn.style.background = ''; applyBtn.disabled = false; }, 3000);
-			}).catch(function() {
-				applyBtn.textContent = '✗ 失败';
-				applyBtn.style.background = '#dc2626';
-				setTimeout(function() { applyBtn.textContent = '保存并应用'; applyBtn.style.background = ''; applyBtn.disabled = false; }, 3000);
-			});
-		});
-
-		resetBtn.addEventListener('click', function() {
-			window.location.reload();
-		});
-
-		var actionsBar = E('div', { 'class': 'ec-actions-bar' }, [resetBtn, saveBtn, applyBtn]);
-
 		// 组装页面
 		var container = E('div', {}, [
 			ecMakeHdr('设置', '配置事件中心监控和通知系统', isRunning),
 			grid,
-			actionsBar,
 			E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理')
 		]);
 
