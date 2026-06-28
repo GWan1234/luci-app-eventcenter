@@ -34,7 +34,7 @@ extract_sub_info() {
     # Also try the top-level subscription-info comment format
     if [ -z "$_expire" ]; then
         _expire=$(grep -i 'expire\|到期\|过期' "$_file" 2>/dev/null | head -1 | \
-            sed -n 's/.*expire[_-]\{0,1}[a-z]*[[:space:]]*:[[:space:]]*["\047]*\([0-9]*\).*/\1/p')
+            sed -n 's/.*expire[_-]*[a-z]*[[:space:]]*:[[:space:]]*["\047]*\([0-9]*\).*/\1/p')
     fi
 
     # Try reading from Clash API subscription info
