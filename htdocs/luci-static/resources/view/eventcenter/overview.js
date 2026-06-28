@@ -5,27 +5,18 @@
 if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.ec-hdr-top{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-bottom{display:flex;align-items:center;gap:6px}.ec-hdr-time{font-size:.78em;color:#9ca3af}.ec-hdr-refresh{background:none;border:none;cursor:pointer;font-size:1em;color:#9ca3af;padding:2px;border-radius:4px;transition:all .15s}.ec-hdr-refresh:hover{background:#f3f4f6;color:#374151}';document.head.appendChild(hs)}
 function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div');h.className='ec-hdr';h.innerHTML='<div class="ec-hdr-left"><h2>'+title+'</h2><p>'+subtitle+'</p></div><div class="ec-hdr-right"><div class="ec-hdr-top"><span class="ec-hdr-dot" style="background:'+(isRunning?'#22c55e':'#ef4444')+'"></span><span class="ec-hdr-status">'+(isRunning?'运行中':'已停止')+'</span></div><div class="ec-hdr-bottom"><span class="ec-hdr-time">最后更新: '+new Date().toLocaleString('zh-CN')+'</span><button class="ec-hdr-refresh" title="刷新">⟳</button></div></div>';h.querySelector('.ec-hdr-refresh').addEventListener('click',function(){window.location.reload()});return h}
 
-/* ── 美化 LuCI 顶部 Tab 菜单 ── */
+/* ── 统一 Tab 菜单样式（v3 — 精简胶囊风格）── */
 ;(function(){
-	if(document.getElementById('ec-tab-css-v2'))return;
-	var s=document.createElement('style');s.id='ec-tab-css-v2';
+	if(document.getElementById('ec-tab-css-v3'))return;
+	var s=document.createElement('style');s.id='ec-tab-css-v3';
 	s.textContent=[
-		/* 卡片 */
-		'.cbi-section{border-radius:10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;margin-bottom:14px!important}',
-		'.cbi-section>h3{border-radius:10px 10px 0 0!important;padding:12px 16px!important;font-size:.95em!important;font-weight:700!important;border-bottom:1px solid #f3f4f6!important}',
-		/* Tab 容器 */
-		'ul.tabs{display:flex!important;gap:0!important;padding:0!important;margin:0 0 14px!important;background:#fff!important;border-radius:0 0 10px 10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;border-top:none!important;position:relative!important}',
-		/* 顶部渐变条 — 作为 ul.tabs 的 ::before 伪元素 */
-		'ul.tabs::before{content:""!important;display:block!important;position:absolute!important;top:-4px!important;left:0!important;right:0!important;height:4px!important;background:linear-gradient(90deg,#c4b5fd,#7c3aed,#4c1d95)!important;border-radius:10px 10px 0 0!important;z-index:1!important}',
-		'ul.tabs>li{margin:0!important;border-bottom:none!important;background:transparent!important;border-radius:0!important}',
-		'ul.tabs>li>a{display:block!important;padding:10px 18px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important}',
-		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#faf5ff!important;border-bottom-color:#e9d5ff!important}',
-		'ul.tabs>li.active,ul.tabs>li[class~="active"]{border-bottom:none!important;background:transparent!important}',
-		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#7c3aed!important;border-bottom:2px solid #7c3aed!important;font-weight:600!important;background:#faf5ff!important}',
-		/* 按钮 */
-		'.cbi-page-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;padding:14px 0!important;margin-top:14px!important;border-top:1px solid #e5e7eb!important}',
-		'.cbi-button-apply{background:#7c3aed!important;color:#fff!important;border:none!important;border-radius:6px!important;padding:8px 20px!important;font-weight:600!important;cursor:pointer!important}',
-		'.cbi-button-apply:hover{background:#6d28d9!important}'
+		'ul.tabs{display:flex!important;gap:6px!important;padding:0!important;margin:0 0 16px!important;background:transparent!important;border:none!important;box-shadow:none!important;position:relative!important;flex-wrap:wrap!important}',
+		'ul.tabs::before{display:none!important}',
+		'ul.tabs>li{margin:0!important;border:none!important;background:transparent!important;border-radius:0!important}',
+		'ul.tabs>li>a{display:inline-block!important;padding:7px 18px!important;font-size:.84em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .2s!important;border-radius:20px!important;background:#f3f4f6!important;border:1px solid transparent!important}',
+		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#ede9fe!important}',
+		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#fff!important;background:#7c3aed!important;font-weight:600!important;border-color:#7c3aed!important;box-shadow:0 2px 8px rgba(124,58,237,.25)!important}',
+		'ul.tabs>li>a{font-size:.88em!important;padding:10px 22px!important}'
 	].join('\n');
 	document.head.appendChild(s);
 })();
