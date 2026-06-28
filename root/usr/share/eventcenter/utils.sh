@@ -206,11 +206,12 @@ format_message() {
 
 # --- Notifier dispatch ---
 
-# notify_send <message> [tags]
+# notify_send <message> [tags] [title]
 # Dispatches message to all enabled notifiers
 notify_send() {
     local _message="$1"
     local _tags="$2"
+    local _title="$3"
 
     # Find all notifier sections from UCI config
     # uci show output format: eventcenter.telegram=notifier
@@ -231,7 +232,7 @@ notify_send() {
             # Dispatch to notifier script
             local _notifier_script="/usr/bin/notifier_${_section}.sh"
             if [ -x "$_notifier_script" ]; then
-                "$_notifier_script" "$_message" "$_tags"
+                "$_notifier_script" "$_message" "$_tags" "$_title"
             fi
         fi
         _i=$(( _i + 1 ))

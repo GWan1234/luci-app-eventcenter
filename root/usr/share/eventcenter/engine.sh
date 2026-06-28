@@ -52,7 +52,7 @@ engine_emit() {
     # 4. Format and send notification
     local _formatted
     _formatted=$(format_message "" "$_source" "$_event" "$_level" "$_title" "$_message")
-    notify_send "$_formatted" "$_tags"
+    notify_send "$_formatted" "$_tags" "$_title"
 
     echo "Event processed: $_source:$_event [$_level] $_title"
     return 0
