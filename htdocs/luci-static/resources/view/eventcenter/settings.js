@@ -1,7 +1,7 @@
 'use strict';
 'require view';
 'require uci';
-'require fs';
+
 
 
 

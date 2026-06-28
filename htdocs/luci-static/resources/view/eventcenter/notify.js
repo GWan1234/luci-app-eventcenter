@@ -1,7 +1,6 @@
 'use strict';
 'require view';
 'require uci';
-'require dom';
 'require fs';
 
 
@@ -226,7 +225,4 @@ return view.extend({
         return container;
     },
 
-    handleSaveApply: null,
-    handleSave: null,
-    handleReset: null
 });
