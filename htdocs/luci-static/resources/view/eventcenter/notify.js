@@ -27,6 +27,26 @@ var st = document.createElement('style'); st.textContent = CARD_CSS; document.he
 /* 暗夜模式检测（兼容 Argon 主题手动切换） */
 (function(){if(document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');var s=document.createElement('style');s.textContent='.ec-dark .cbi-section{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important;border-top-color:#374151!important}.ec-dark .cbi-section>h3{border-bottom-color:#333!important}.ec-dark .cbi-page-actions{border-top-color:#374151!important}.ec-dark .cbi-map>.cbi-map-descr{color:#9ca3af!important}.ec-dark .cbi-value>.cbi-value-title{color:#d1d5db!important}.ec-dark .cbi-value input[type=text],.ec-dark .cbi-value input[type=password],.ec-dark .cbi-value textarea,.ec-dark .cbi-value select{border-color:#374151!important;background:#1e1e2e!important;color:#e5e7eb!important}.ec-dark .cbi-value .cbi-input-description{color:#9ca3af!important}.ec-dark .cbi-section .cbi-section-table-row{background:#1e1e2e!important;border-color:#374151!important}.ec-dark .cbi-button-action{background:#374151!important;color:#e5e7eb!important}.ec-dark .cbi-button-reset{background:#374151!important;color:#9ca3af!important}';document.head.appendChild(s)})()
 
+function ecPageHeader(title, subtitle, isRunning, lastUpdate) {
+	if (!document.getElementById('ec-header-css')) {
+		var s = document.createElement('style'); s.id = 'ec-header-css';
+		s.textContent = '.ec-page-header{display:flex;align-items:flex-start;justify-content:space-between;padding:0 0 20px 0;margin-bottom:20px;border-bottom:1px solid #f3f4f6}.ec-page-title{font-size:1.4em;font-weight:700;color:#1f2937;margin:0 0 4px 0;line-height:1.3}.ec-page-subtitle{font-size:.85em;color:#9ca3af;margin:0;line-height:1.4}.ec-page-status{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:4px}.ec-status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-status-dot.stopped{background:#ef4444}.ec-status-label{font-size:.82em;font-weight:600;color:#22c55e}.ec-status-label.stopped{color:#ef4444}.ec-status-time{font-size:.75em;color:#d1d5db;margin-left:4px}.ec-dark .ec-page-header{border-bottom-color:#374151}.ec-dark .ec-page-title{color:#f3f4f6}.ec-dark .ec-page-subtitle{color:#9ca3af}';
+		document.head.appendChild(s);
+	}
+	var now = lastUpdate || new Date().toLocaleString('zh-CN', {hour12:false});
+	return E('div', {'class':'ec-page-header'}, [
+		E('div', {}, [
+			E('h2', {'class':'ec-page-title'}, title),
+			E('p', {'class':'ec-page-subtitle'}, subtitle)
+		]),
+		E('div', {'class':'ec-page-status'}, [
+			E('span', {'class':'ec-status-dot' + (isRunning ? '' : ' stopped')}),
+			E('span', {'class':'ec-status-label' + (isRunning ? '' : ' stopped')}, isRunning ? '运行中' : '已停止'),
+			E('span', {'class':'ec-status-time'}, '最近更新 ' + now)
+		])
+	]);
+}
+
 var BORDER_COLORS = {
 	'telegram': '#0088cc', 'ntfy': '#4caf50', 'wechat': '#07c160',
 	'bark': '#ff6b6b', 'pushplus': '#ff9800',
@@ -125,6 +145,12 @@ return view.extend({
 		o.depends('enable', '1'); o.rmempty = true;
 
 		return m.render().then(function(node) {
+			/* 统一页面头部 */
+			var notifierNames = ['telegram','ntfy','wechat','bark','pushplus','serverchan','serverchan3'];
+			var anyRunning = notifierNames.some(function(k) { return uci.get('eventcenter', k, 'enable') === '1'; });
+			var header = ecPageHeader('通知渠道', '配置消息推送渠道，确保事件通知送达', anyRunning);
+			node.insertBefore(header, node.firstChild);
+
 			/* 为每个 section 添加边框色和测试按钮 */
 			var sections = node.querySelectorAll('.cbi-section');
 			var channelList = [

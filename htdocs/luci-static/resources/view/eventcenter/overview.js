@@ -75,6 +75,28 @@ return view.extend({
 
 		function spark(v,mx){var b=[];for(var i=0;i<8;i++){var h=Math.round(Math.max(3,Math.min(22,(v/mx)*22*(0.4+Math.random()*0.6))));b.push(E('div',{style:'width:3px;height:'+h+'px;background:#7c3aed;border-radius:2px;opacity:'+(0.4+(i/8)*0.6)}));}return b;}
 
+		function ecPageHeader(title, subtitle, running, lastUpdate) {
+			if (!document.getElementById('ec-header-css')) {
+				var s = document.createElement('style'); s.id = 'ec-header-css';
+				s.textContent = '.ec-page-header{display:flex;align-items:flex-start;justify-content:space-between;padding:0 0 20px 0;margin-bottom:20px;border-bottom:1px solid #f3f4f6}.ec-page-title{font-size:1.4em;font-weight:700;color:#1f2937;margin:0 0 4px 0;line-height:1.3}.ec-page-subtitle{font-size:.85em;color:#9ca3af;margin:0;line-height:1.4}.ec-page-status{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:4px}.ec-status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-status-dot.stopped{background:#ef4444}.ec-status-label{font-size:.82em;font-weight:600;color:#22c55e}.ec-status-label.stopped{color:#ef4444}.ec-status-time{font-size:.75em;color:#d1d5db;margin-left:4px}';
+				document.head.appendChild(s);
+			}
+			var now = lastUpdate || new Date().toLocaleString('zh-CN', {hour12:false});
+			return E('div', {'class':'ec-page-header'}, [
+				E('div', {}, [
+					E('h2', {'class':'ec-page-title'}, title),
+					E('p', {'class':'ec-page-subtitle'}, subtitle)
+				]),
+				E('div', {'class':'ec-page-status'}, [
+					E('span', {'class':'ec-status-dot' + (running ? '' : ' stopped')}),
+					E('span', {'class':'ec-status-label' + (running ? '' : ' stopped')}, running ? '运行中' : '已停止'),
+					E('span', {'class':'ec-status-time'}, '最近更新 ' + now)
+				])
+			]);
+		}
+
+		var header = ecPageHeader('概述', '系统概览与实时状态', isRunning);
+
 		var sc=[
 			{icon:'🔄',bg:'#eff6ff',color:'#3b82f6',label:'运行状态',value:isRunning?'运行中':'已停止',sub:'系统正常运行'},
 			{icon:'⏱️',bg:'#f5f3ff',color:'#7c3aed',label:'运行时间',value:hData.uptime,sub:'持续运行中'},
@@ -106,6 +128,7 @@ return view.extend({
 		var footer=E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理');
 
 		return E('div', {}, [
+			header,
 			E('div',{'class':'ec-summary'},summaryEls),
 			E('div',{'class':'ec-row'},[resourceCard,serviceCard]),
 			E('div',{'class':'ec-row'},[eventsCard,deviceCard]),

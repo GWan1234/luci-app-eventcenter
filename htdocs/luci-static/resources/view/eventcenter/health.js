@@ -38,6 +38,26 @@ var st = document.createElement('style'); st.textContent = EC_CSS; document.head
 /* 暗夜模式检测（兼容 Argon 主题手动切换） */
 (function(){if(document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');var s=document.createElement('style');s.textContent='.ec-dark .ec-card,.ec-dark .cbi-section{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important;border-top-color:#374151!important}.ec-dark .ec-table th{border-bottom-color:#333!important;color:#9ca3af!important}.ec-dark .ec-table td{border-bottom-color:#2a2a3e!important}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .cbi-page-actions{border-top-color:#374151!important}.ec-dark .cbi-map>.cbi-map-descr{color:#9ca3af!important}.ec-dark .cbi-value>.cbi-value-title{color:#d1d5db!important}.ec-dark .cbi-value input[type=text],.ec-dark .cbi-value select{border-color:#374151!important;background:#1e1e2e!important;color:#e5e7eb!important}.ec-dark .cbi-value .cbi-input-description{color:#9ca3af!important}.ec-dark .ec-muted{color:#9ca3af!important}.ec-dark h3{background:#333!important;color:#ccc!important}.ec-dark .ec-stat-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-stat-off{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-stat-blue{background:#1e3a5f;color:#93c5fd}.ec-dark .ec-stat-warn,.ec-dark .ec-badge-fail{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-stat-ok{background:#064e3b;color:#6ee7b7}';document.head.appendChild(s)})()
 
+function ecPageHeader(title, subtitle, isRunning, lastUpdate) {
+	if (!document.getElementById('ec-header-css')) {
+		var s = document.createElement('style'); s.id = 'ec-header-css';
+		s.textContent = '.ec-page-header{display:flex;align-items:flex-start;justify-content:space-between;padding:0 0 20px 0;margin-bottom:20px;border-bottom:1px solid #f3f4f6}.ec-page-title{font-size:1.4em;font-weight:700;color:#1f2937;margin:0 0 4px 0;line-height:1.3}.ec-page-subtitle{font-size:.85em;color:#9ca3af;margin:0;line-height:1.4}.ec-page-status{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:4px}.ec-status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-status-dot.stopped{background:#ef4444}.ec-status-label{font-size:.82em;font-weight:600;color:#22c55e}.ec-status-label.stopped{color:#ef4444}.ec-status-time{font-size:.75em;color:#d1d5db;margin-left:4px}.ec-dark .ec-page-header{border-bottom-color:#374151}.ec-dark .ec-page-title{color:#f3f4f6}.ec-dark .ec-page-subtitle{color:#9ca3af}';
+		document.head.appendChild(s);
+	}
+	var now = lastUpdate || new Date().toLocaleString('zh-CN', {hour12:false});
+	return E('div', {'class':'ec-page-header'}, [
+		E('div', {}, [
+			E('h2', {'class':'ec-page-title'}, title),
+			E('p', {'class':'ec-page-subtitle'}, subtitle)
+		]),
+		E('div', {'class':'ec-page-status'}, [
+			E('span', {'class':'ec-status-dot' + (isRunning ? '' : ' stopped')}),
+			E('span', {'class':'ec-status-label' + (isRunning ? '' : ' stopped')}, isRunning ? '运行中' : '已停止'),
+			E('span', {'class':'ec-status-time'}, '最近更新 ' + now)
+		])
+	]);
+}
+
 function statusDot(color) {
 	return E('span', { 'class': 'ec-dot', 'style': 'background:' + color });
 }
@@ -95,6 +115,15 @@ render: function(data) {
 			if (p.length >= 6 && (p[2] === 'node_failover' || p[2] === 'node_recovery')) {
 				healthEvents.push({ time: p[0], event: p[2], level: p[3], title: p[4] });
 			}
+		}
+
+		/* 解析最后更新时间 */
+		var lastUpdate = '';
+		var logLinesAll = logOutput.split('\n').filter(function(l) { return l.length > 0; });
+		if (logLinesAll.length > 0) {
+			var lastLine = logLinesAll[logLinesAll.length - 1];
+			var tsMatch = lastLine.match(/^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})/);
+			if (tsMatch) lastUpdate = tsMatch[1];
 		}
 
 		/* ── 统计卡 ── */
@@ -157,6 +186,7 @@ render: function(data) {
 
 		/* ── 布局 ── */
 		var content = E('div', { 'style': 'padding:0' }, [
+			ecPageHeader('节点健康', '节点状态监控与切换记录', healthEnabled, lastUpdate),
 			stats,
 
 			E('div', { 'class': 'ec-card', 'style': 'border-top:3px solid #2563eb' }, [
