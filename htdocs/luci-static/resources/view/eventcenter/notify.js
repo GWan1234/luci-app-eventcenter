@@ -2,6 +2,7 @@
 'require view';
 'require uci';
 'require dom';
+if(!document.getElementById('ec-tabs-css-link')){var lk=document.createElement('link');lk.id='ec-tabs-css-link';lk.rel='stylesheet';lk.href=L.resource+'/eventcenter/ec-tabs.css';document.head.appendChild(lk)}
 
 
 
