@@ -2,26 +2,6 @@
 'require view';
 'require fs';
 
-/* ── 统一 Tab 菜单样式（v3 — 胶囊风格 + MutationObserver 防闪烁）── */
-;(function(){
-	if(document.getElementById('ec-tab-css-v3'))return;
-	var s=document.createElement('style');s.id='ec-tab-css-v3';
-	s.textContent=[
-		'ul.tabs:not(.ec-ready){visibility:hidden!important}',
-		'ul.tabs.ec-ready{visibility:visible!important;display:flex!important;gap:6px!important;padding:0!important;margin:0 0 16px!important;background:transparent!important;border:none!important;box-shadow:none!important;flex-wrap:wrap!important}',
-		'ul.tabs::before{display:none!important}',
-		'ul.tabs>li{margin:0!important;border:none!important;background:transparent!important;border-radius:0!important}',
-		'ul.tabs>li>a{display:inline-block!important;padding:10px 22px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-radius:20px!important;background:#f3f4f6!important;border:1px solid transparent!important}',
-		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#ede9fe!important}',
-		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#fff!important;background:#7c3aed!important;font-weight:600!important;border-color:#7c3aed!important;box-shadow:0 2px 8px rgba(124,58,237,.25)!important}'
-	].join('\n');
-	document.head.appendChild(s);
-	/* MutationObserver: tab 插入 DOM 时立即标记 ec-ready，浏览器 repaint 前完成 */
-	function markReady(n){if(n.nodeType!==1)return;if(n.tagName==='UL'&&n.classList.contains('tabs'))n.classList.add('ec-ready');var q=n.querySelectorAll?n.querySelectorAll('ul.tabs'):[];for(var i=0;i<q.length;i++)q[i].classList.add('ec-ready')}
-	var obs=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var nn=muts[i].addedNodes;for(var j=0;j<nn.length;j++)markReady(nn[j])}});
-	obs.observe(document.documentElement,{childList:true,subtree:true});
-	markReady(document.documentElement);
-})();
 
 /* ── 暗夜模式 ── */
 ;(function(){if(document.getElementById('ec-dark-css'))return;var lk=document.createElement('link');lk.id='ec-dark-css';lk.rel='stylesheet';lk.href='/luci-static/resources/eventcenter/ec-dark.css';document.head.appendChild(lk);function ck(){var bg=getComputedStyle(document.body).backgroundColor;var m=bg.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);var dk=m&&((parseInt(m[1])+parseInt(m[2])+parseInt(m[3]))/3<80);if(dk||document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');else document.documentElement.classList.remove('ec-dark')}ck();window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',ck)})();

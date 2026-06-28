@@ -128,3 +128,6 @@
 
 /* ── 通知渠道 — 预览区域加深 ── */
 .ec-dark .ec-notify-preview{filter:brightness(.6) saturate(.7)!important}
+
+/* ── h3 标题背景（Argon dark.css 设置了 #333333，我们统一为卡片色）── */
+.ec-dark h3{background:#1e1e2e!important;color:#e2e8f0!important}
