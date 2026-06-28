@@ -258,7 +258,8 @@ check_subscription() {
 
         eventcenter emit openclash "config_change_${_sub_name}" info \
             "$_sub_name 订阅更新" \
-            "$_msg"
+            "$_msg" \
+            "ec:配置变更"
 
         rm -f "$_tmp_regions" "$_tmp_oldr" "$_tmp_newr"
     fi

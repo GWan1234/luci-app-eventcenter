@@ -126,7 +126,7 @@ group_in_filter() {
     local _group="$1" _filter
     _filter=$(ec_uci_get "health.monitor_groups" "")
     [ -z "$_filter" ] && return 0  # empty = monitor all
-    echo "$_filter" | tr ',' '\n' | fgrep -qF "$_group"
+    echo "$_filter" | tr ',' '\n' | grep -qF "$_group"
 }
 
 # record_latency <group> <node> <delay_ms>
@@ -205,7 +205,7 @@ check() {
         group_in_filter "$_group" || continue
 
         local _old_node
-        _old_node=$(fgrep -F "${_group}$(printf '\t')" "$_tmp_old" 2>/dev/null | cut -f2)
+        _old_node=$(grep -F "${_group}$(printf '\t')" "$_tmp_old" 2>/dev/null | cut -f2)
 
         # Skip if no previous record or same node
         [ -z "$_old_node" ] && continue
@@ -228,13 +228,13 @@ check() {
                 printf '%s\t%s\t%s\n' "$_group" "$(prepend_flag "$_old_node")" "$(prepend_flag "$_current_node")" >> "$_tmp_failovers"
             fi
             # Record failed node for recovery tracking (append if not exists)
-            if ! fgrep -qF "${_group}$(printf '\t')${_old_node}" "$_failed_file" 2>/dev/null; then
+            if ! grep -qF "${_group}$(printf '\t')${_old_node}" "$_failed_file" 2>/dev/null; then
                 echo "${_group}$(printf '\t')${_old_node}" >> "$_failed_file"
             fi
         else
             # Node changed but old node is still reachable
             # Check if this is a recovery (node was previously failed)
-            if [ "$_notify_recovery" = "1" ] && [ -f "$_failed_file" ] && fgrep -qF "${_group}$(printf '\t')${_current_node}" "$_failed_file" 2>/dev/null; then
+            if [ "$_notify_recovery" = "1" ] && [ -f "$_failed_file" ] && grep -qF "${_group}$(printf '\t')${_current_node}" "$_failed_file" 2>/dev/null; then
                 # Recovery: previously failed node is back — dedup by group:node
                 local _dedup_key_r
                 _dedup_key_r=$(printf '%s:%s:recovery' "$_group" "$_current_node" | md5sum 2>/dev/null | cut -d' ' -f1)
@@ -242,7 +242,7 @@ check() {
                     printf '%s\t%s\t%s\n' "$_group" "$(prepend_flag "$_old_node")" "$(prepend_flag "$_current_node")" >> "$_tmp_recoveries"
                 fi
                 # Remove from failed list
-                fgrep -vF "${_group}$(printf '\t')${_current_node}" "$_failed_file" > "/tmp/ec_failed_tmp_$$" 2>/dev/null
+                grep -vF "${_group}$(printf '\t')${_current_node}" "$_failed_file" > "/tmp/ec_failed_tmp_$$" 2>/dev/null
                 mv "/tmp/ec_failed_tmp_$$" "$_failed_file"
             fi
         fi
@@ -253,7 +253,7 @@ check() {
         local _tmp_awk="/tmp/ec_hawk_$$"
         cat > "$_tmp_awk" << 'AWKEOF'
 BEGIN {
-    printf "\xf0\x9f\x9a\xa8 *节点自动切换*\n"
+    printf "\xf0\x9f\x9a\xa8 *节点故障转移*\n"
     printf "\xf0\x9f\x94\xb4\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\xe2\x94\x81\n"
     cmd = "date +\"%Y-%m-%d %H:%M:%S\""
     cmd | getline ts; close(cmd)
@@ -270,8 +270,8 @@ AWKEOF
 
         if [ -n "$_msg" ]; then
             eventcenter emit openclash "node_failover" warn \
-                "节点自动切换" \
-                "$_msg"
+                "节点故障转移" \
+                "$_msg" "ec:节点监控"
         fi
         rm -f "$_tmp_awk"
     fi
@@ -298,7 +298,7 @@ AWKEOFR
         if [ -n "$_msg_r" ]; then
             eventcenter emit openclash "node_recovery" info \
                 "节点恢复" \
-                "$_msg_r"
+                "$_msg_r" "ec:节点监控"
         fi
         rm -f "$_tmp_awk_r"
     fi

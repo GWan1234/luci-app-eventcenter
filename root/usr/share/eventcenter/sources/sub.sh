@@ -34,7 +34,7 @@ extract_sub_info() {
     # Also try the top-level subscription-info comment format
     if [ -z "$_expire" ]; then
         _expire=$(grep -i 'expire\|到期\|过期' "$_file" 2>/dev/null | head -1 | \
-            sed -n 's/.*expire[_-]?[a-z]*[[:space:]]*:[[:space:]]*["\047]*\([0-9]*\).*/\1/p')
+            sed -n 's/.*expire[_-]\{0,1}[a-z]*[[:space:]]*:[[:space:]]*["\047]*\([0-9]*\).*/\1/p')
     fi
 
     # Try reading from Clash API subscription info
@@ -95,6 +95,13 @@ format_traffic() {
 
 # check()
 # Main entry: checks all subscriptions for expiry
+
+get_clash_port() {
+    local _ec_port
+    _ec_port=$(grep -o 'external-controller:[^:]*:\([0-9]*\)' /etc/openclash/config/*.yaml 2>/dev/null | head -1 | grep -o '[0-9]*$')
+    echo "${_ec_port:-9090}"
+}
+
 check() {
     local _enable
     _enable=$(ec_uci_get "sub.enable" "0")
@@ -129,7 +136,7 @@ check() {
 
         # If sub_names filter is set, only check listed subscriptions
         if [ -n "$_sub_names" ]; then
-            echo "$_sub_names" | tr ',' '\n' | fgrep -qxF "$_sub_name" || continue
+            echo "$_sub_names" | tr ',' '\n' | grep -qxF "$_sub_name" || continue
         fi
 
         local _info

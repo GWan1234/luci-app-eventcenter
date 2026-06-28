@@ -4,7 +4,7 @@
 
 return view.extend({
 	load: function() {
-		return fs.exec('/bin/cat', ['/tmp/eventcenter.log']);
+		return fs.exec('/bin/cat', ['/etc/eventcenter/eventcenter.log']);
 	},
 
 	render: function(logRes) {
@@ -66,7 +66,7 @@ return view.extend({
 						}, '🗑️ 清除日志');
 						clearBtn.addEventListener('click', function() {
 							if (confirm('确定要清除所有日志吗？')) {
-								fs.exec('/bin/rm', ['-f', '/tmp/eventcenter.log']).then(function() { window.location.reload(); });
+								fs.exec('/bin/rm', ['-f', '/etc/eventcenter/eventcenter.log']).then(function() { window.location.reload(); });
 							}
 						});
 						return clearBtn;

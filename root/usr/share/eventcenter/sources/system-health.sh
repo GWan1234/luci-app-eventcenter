@@ -191,7 +191,8 @@ check() {
 
             eventcenter emit system "health_recovery" info \
                 "系统恢复正常" \
-                "$_recovery"
+                "$_recovery" \
+                "ec:系统监控"
         fi
         return 0
     fi
@@ -208,7 +209,8 @@ check() {
 
     eventcenter emit system "health_alert" "$_level" \
         "系统健康告警" \
-        "$_msg"
+        "$_msg" \
+        "ec:系统监控"
 }
 
 # --- Status (for overview page) ---
