@@ -105,7 +105,6 @@ return view.extend({
 
             // 所有渠道统一用 eventcenter test 测试
             var testBtn = E('button', {
-                'class': 'cbi-button cbi-button-action',
                 'style': 'padding:6px 16px;border:1.5px solid #7c3aed;border-radius:6px;background:transparent;color:#7c3aed;font-size:.8em;font-weight:600;cursor:pointer',
                 'click': function() {
                     var btn = this;
