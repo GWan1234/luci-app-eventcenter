@@ -98,9 +98,11 @@ return view.extend({
 	render: function() {
 		var m, s, o;
 
+		// 读取服务状态
+		var isRunning = uci.get('eventcenter', 'global', 'enable') === '1';
+
 		// --- Main Map ---
-		m = new form.Map('eventcenter', '事件中心',
-			'配置事件中心监控和通知系统。');
+		m = new form.Map('eventcenter', '', '');
 
 		// --- Global Settings ---
 		s = m.section(form.NamedSection, 'global', 'eventcenter', '全局设置');
@@ -299,8 +301,10 @@ return view.extend({
 		o = s.option(form.DynamicList, 'sub_names', '关注的订阅',
 			'只监控这些订阅，留空则监控所有');
 
-		/* post-render: 在 cbi-page-actions 里追加"保存并重启"按钮 */
+		/* post-render: 插入统一头部 + 折叠 + 保存并重启按钮 */
 		return m.render().then(function(node) {
+			// 插入统一头部
+			node.insertBefore(ecMakeHdr('设置', '配置事件中心监控和通知系统', isRunning), node.firstChild);
 			function addRestartBtn(container) {
 				var btn = E('button', {
 					'class': 'cbi-button cbi-button-apply',
