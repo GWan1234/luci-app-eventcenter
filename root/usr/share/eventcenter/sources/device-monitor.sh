@@ -12,25 +12,23 @@ STATE_FILE="/tmp/eventcenter_device_state"
 
 get_all_devices() {
     # Merge DHCP leases + ARP table, deduplicate by MAC
-    # Output: MAC	IP	Name
-    # DHCP first (has names), then ARP (no names), dedup keeps first occurrence
+    # Output: MAC\tIP\tName
     {
         # DHCP leases: MAC IP hostname expiry
         [ -f /tmp/dhcp.leases ] && awk '{
             mac = toupper($2)
             ip = $3
             name = ($4 == "*" ? "" : $4)
-            printf "%s	%s	%s\n", mac, ip, name
+            printf "%s\t%s\t%s\n", mac, ip, name
         }' /tmp/dhcp.leases
 
         # ARP table: IP HWType Flags HWAddr Mask Device
-        # Only include reachable (Flags 0x2) entries, skip incomplete (0x0)
-        awk 'NR > 1 && $3 == "0x2" && $4 ~ /^[0-9a-fA-F:]+$/ && $4 != "00:00:00:00:00:00" {
-            mac = toupper($4)
+        awk 'NR > 1 && $3 ~ /^[0-9a-fA-F:]+$/ {
+            mac = toupper($3)
             ip = $1
-            printf "%s	%s	\n", mac, ip
+            printf "%s\t%s\t\n", mac, ip
         }' /proc/net/arp 2>/dev/null
-    } | awk -F'	' '$3!=""{if(!seen[$1]++){print;next}} !seen[$1]++'
+    } | sort -t'	' -k1,1 -u
 }
 
 # --- Resolve device name ---
@@ -116,7 +114,7 @@ check() {
         [ -z "$_ip" ] && _ip="N/A"
 
         _online_count=$(( _online_count + 1 ))
-        _msg=$(printf "%s🟢 *%s* 上线\n   MAC: \`%s\`\n   IP: \`%s\`\n\n" "$_msg" "$_name" "$_mac" "$_ip")
+        _msg=$(printf "%s🟢 *%s* 上线\n   MAC: \`%s\` | IP: \`%s\`\n\n" "$_msg" "$_name" "$_mac" "$_ip")
     done < "$_new_macs"
 
     # Gone devices
@@ -130,28 +128,23 @@ check() {
         [ -z "$_ip" ] && _ip="N/A"
 
         _offline_count=$(( _offline_count + 1 ))
-        _msg=$(printf "%s🔴 *%s* 离线\n   MAC: \`%s\`\n   IP: \`%s\`\n\n" "$_msg" "$_name" "$_mac" "$_ip")
+        _msg=$(printf "%s🔴 *%s* 离线\n   MAC: \`%s\` | IP: \`%s\`\n\n" "$_msg" "$_name" "$_mac" "$_ip")
     done < "$_gone_macs"
 
     # Send notification if there are changes
     if [ "$_online_count" -gt 0 ] || [ "$_offline_count" -gt 0 ]; then
-        local _title=""
-        if [ "$_online_count" -gt 0 ] && [ "$_offline_count" -gt 0 ]; then
-            _title=$(printf "设备变动: %d台上线, %d台离线" "$_online_count" "$_offline_count")
-        elif [ "$_online_count" -gt 0 ]; then
-            _title=$(printf "设备上线: %d台" "$_online_count")
-        else
-            _title=$(printf "设备离线: %d台" "$_offline_count")
-        fi
+        local _title="设备状态变动"
 
-        local _total
+        local _total _ts
         _total=$(wc -l < "$_current_macs")
-        local _header=$(printf "📱 *设备状态变动*\n━━━━━━━━━━━━━━━━\n当前在线: %d台\n\n" "$_total")
+        _ts=$(date '+%Y-%m-%d %H:%M:%S')
+
+        local _header=$(printf "📱 *设备状态变动*\n━━━━━━━━━━━━━━━━\n📅 %s\n当前在线: %d台\n\n" "$_ts" "$_total")
         _msg="${_header}${_msg}"
 
         eventcenter emit system "device_change" "info" \
             "$_title" \
-            "$_msg"
+            "$_msg" "ec:设备监控"
     fi
 
     # Update state file (atomic write)
@@ -162,7 +155,7 @@ check() {
     rm -f "$_new_macs" "$_gone_macs"
 }
 
-# --- List devices (for overview page) ---
+# --- Device list (for overview page, tab-separated) ---
 
 device_list() {
     if [ -f "$STATE_FILE" ] && [ -s "$STATE_FILE" ]; then
