@@ -3,6 +3,32 @@
 'require form';
 'require fs';
 'require uci';
+var ecHdr = require('view/eventcenter/ec-header');
+
+/* ── 美化 LuCI 顶部 Tab 菜单 ── */
+;(function(){
+	if(document.getElementById('ec-tab-css-v2'))return;
+	var s=document.createElement('style');s.id='ec-tab-css-v2';
+	s.textContent=[
+		/* 卡片 */
+		'.cbi-section{border-radius:10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;margin-bottom:14px!important}',
+		'.cbi-section>h3{border-radius:10px 10px 0 0!important;padding:12px 16px!important;font-size:.95em!important;font-weight:700!important;border-bottom:1px solid #f3f4f6!important}',
+		/* Tab 容器 */
+		'ul.tabs{display:flex!important;gap:0!important;padding:0!important;margin:0 0 14px!important;background:#fff!important;border-radius:0 0 10px 10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;border-top:none!important;position:relative!important}',
+		/* 顶部渐变条 — 作为 ul.tabs 的 ::before 伪元素 */
+		'ul.tabs::before{content:""!important;display:block!important;position:absolute!important;top:-4px!important;left:0!important;right:0!important;height:4px!important;background:linear-gradient(90deg,#c4b5fd,#7c3aed,#4c1d95)!important;border-radius:10px 10px 0 0!important;z-index:1!important}',
+		'ul.tabs>li{margin:0!important;border-bottom:none!important;background:transparent!important;border-radius:0!important}',
+		'ul.tabs>li>a{display:block!important;padding:10px 18px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important}',
+		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#faf5ff!important;border-bottom-color:#e9d5ff!important}',
+		'ul.tabs>li.active,ul.tabs>li[class~="active"]{border-bottom:none!important;background:transparent!important}',
+		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#7c3aed!important;border-bottom:2px solid #7c3aed!important;font-weight:600!important;background:#faf5ff!important}',
+		/* 按钮 */
+		'.cbi-page-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;padding:14px 0!important;margin-top:14px!important;border-top:1px solid #e5e7eb!important}',
+		'.cbi-button-apply{background:#7c3aed!important;color:#fff!important;border:none!important;border-radius:6px!important;padding:8px 20px!important;font-weight:600!important;cursor:pointer!important}',
+		'.cbi-button-apply:hover{background:#6d28d9!important}'
+	].join('\n');
+	document.head.appendChild(s);
+})();
 
 /* ── 卡片样式注入 ── */
 var CARD_CSS = [
@@ -58,26 +84,6 @@ function applyCardColors() {
 
 window.addEventListener('load', function() { setTimeout(applyCardColors, 100); });
 
-function ecPageHeader(title, subtitle, isRunning, lastUpdate) {
-	if (!document.getElementById('ec-header-css')) {
-		var s = document.createElement('style'); s.id = 'ec-header-css';
-		s.textContent = '.ec-page-header{display:flex;align-items:flex-start;justify-content:space-between;padding:0 0 20px 0;margin-bottom:20px;border-bottom:1px solid #f3f4f6}.ec-page-title{font-size:1.4em;font-weight:700;color:#1f2937;margin:0 0 4px 0;line-height:1.3}.ec-page-subtitle{font-size:.85em;color:#9ca3af;margin:0;line-height:1.4}.ec-page-status{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:4px}.ec-status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-status-dot.stopped{background:#ef4444}.ec-status-label{font-size:.82em;font-weight:600;color:#22c55e}.ec-status-label.stopped{color:#ef4444}.ec-status-time{font-size:.75em;color:#d1d5db;margin-left:4px}.ec-dark .ec-page-header{border-bottom-color:#374151}.ec-dark .ec-page-title{color:#f3f4f6}.ec-dark .ec-page-subtitle{color:#9ca3af}';
-		document.head.appendChild(s);
-	}
-	var now = lastUpdate || new Date().toLocaleString('zh-CN', {hour12:false});
-	return E('div', {'class':'ec-page-header'}, [
-		E('div', {}, [
-			E('h2', {'class':'ec-page-title'}, title),
-			E('p', {'class':'ec-page-subtitle'}, subtitle)
-		]),
-		E('div', {'class':'ec-page-status'}, [
-			E('span', {'class':'ec-status-dot' + (isRunning ? '' : ' stopped')}),
-			E('span', {'class':'ec-status-label' + (isRunning ? '' : ' stopped')}, isRunning ? '运行中' : '已停止'),
-			E('span', {'class':'ec-status-time'}, '最近更新 ' + now)
-		])
-	]);
-}
-
 return view.extend({
 
 	load: function() {
@@ -105,7 +111,7 @@ return view.extend({
 
 		o = s.option(form.Value, 'log_path', '日志路径',
 			'事件日志文件路径');
-		o.default = '/tmp/eventcenter.log';
+		o.default = '/etc/eventcenter/eventcenter.log';
 		o.rmempty = false;
 
 		o = s.option(form.Value, 'log_max_lines', '最大日志行数',
@@ -292,11 +298,11 @@ return view.extend({
 
 		/* post-render: 在 cbi-page-actions 里追加"保存并重启"按钮 */
 		return m.render().then(function(node) {
-			/* 插入统一页面头部 */
-			var isRunning = uci.get('eventcenter', 'global', 'enable') === '1';
-			var header = ecPageHeader('设置', '全局配置与事件源管理', isRunning);
+			/* 插入页面头部 */
+			var globalCfg = uci.get('eventcenter', 'global') || {};
+			var isRunning = globalCfg.enable === '1';
+			var header = ecHdr.makeHeader('设置', '全局配置与事件源管理', isRunning);
 			node.insertBefore(header, node.firstChild);
-
 			function addRestartBtn(container) {
 				var btn = E('button', {
 					'class': 'cbi-button cbi-button-apply',

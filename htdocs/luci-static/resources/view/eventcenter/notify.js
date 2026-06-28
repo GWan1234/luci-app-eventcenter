@@ -1,240 +1,193 @@
 'use strict';
 'require view';
-'require form';
-'require fs';
 'require uci';
+'require dom';
+var ecHdr = require('view/eventcenter/ec-header');
 
-var CARD_CSS = [
-	'.cbi-map { padding:0 !important; max-width:100%; overflow-x:hidden }',
-	'.cbi-map > h2 { margin-bottom:4px }',
-	'.cbi-map > .cbi-map-descr { color:var(--text-color-secondary, #666);font-size:0.9em;margin-bottom:20px }',
-	'.cbi-section { background:var(--background-color-white, #fff);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);padding:20px;margin-bottom:16px;border-top:3px solid var(--border-color-medium, #6b7280);overflow:hidden }',
-	'.cbi-section > h3 { border-bottom:1px solid var(--border-color-light, #eee);padding-bottom:12px;margin:-20px -20px 16px -20px;padding:16px 20px 12px;font-size:1.05em;font-weight:700 }',
-	'.cbi-value { margin-bottom:10px }',
-	'.cbi-value > .cbi-value-title { font-weight:600;font-size:0.85em;color:var(--text-color, #555);margin-bottom:4px }',
-	'.cbi-value input[type=text], .cbi-value input[type=password], .cbi-value textarea, .cbi-value select { border:1px solid var(--border-color, #ddd);border-radius:6px;padding:8px 10px;background:var(--background-color, #fff);color:var(--text-color, #333);max-width:100% }',
-	'.cbi-value input:focus, .cbi-value select:focus { border-color:#3b82f6;outline:none;box-shadow:0 0 0 2px rgba(59,130,246,0.15) }',
-	'.cbi-value .cbi-input-description { font-size:0.75em;color:var(--text-color-secondary, #888);margin-top:4px }',
-	'.cbi-button-save { background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
-	'.cbi-button-apply { background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-weight:600 }',
-	'.cbi-page-actions { display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee);flex-wrap:wrap }',
-	'.ec-test-btn { padding:6px 16px;border:1px solid #3b82f6;color:#3b82f6;background:transparent;border-radius:8px;font-size:.85em;cursor:pointer;font-weight:500;margin-top:8px }',
-	'.ec-test-btn:hover { background:rgba(59,130,246,0.1) }',
-	'.ec-test-btn:disabled { opacity:0.6;cursor:not-allowed }',
-
-].join(' ');
-var st = document.createElement('style'); st.textContent = CARD_CSS; document.head.appendChild(st);
-/* 暗夜模式检测（兼容 Argon 主题手动切换） */
-(function(){if(document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');var s=document.createElement('style');s.textContent='.ec-dark .cbi-section{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important;border-top-color:#374151!important}.ec-dark .cbi-section>h3{border-bottom-color:#333!important}.ec-dark .cbi-page-actions{border-top-color:#374151!important}.ec-dark .cbi-map>.cbi-map-descr{color:#9ca3af!important}.ec-dark .cbi-value>.cbi-value-title{color:#d1d5db!important}.ec-dark .cbi-value input[type=text],.ec-dark .cbi-value input[type=password],.ec-dark .cbi-value textarea,.ec-dark .cbi-value select{border-color:#374151!important;background:#1e1e2e!important;color:#e5e7eb!important}.ec-dark .cbi-value .cbi-input-description{color:#9ca3af!important}.ec-dark .cbi-section .cbi-section-table-row{background:#1e1e2e!important;border-color:#374151!important}.ec-dark .cbi-button-action{background:#374151!important;color:#e5e7eb!important}.ec-dark .cbi-button-reset{background:#374151!important;color:#9ca3af!important}';document.head.appendChild(s)})()
-
-function ecPageHeader(title, subtitle, isRunning, lastUpdate) {
-	if (!document.getElementById('ec-header-css')) {
-		var s = document.createElement('style'); s.id = 'ec-header-css';
-		s.textContent = '.ec-page-header{display:flex;align-items:flex-start;justify-content:space-between;padding:0 0 20px 0;margin-bottom:20px;border-bottom:1px solid #f3f4f6}.ec-page-title{font-size:1.4em;font-weight:700;color:#1f2937;margin:0 0 4px 0;line-height:1.3}.ec-page-subtitle{font-size:.85em;color:#9ca3af;margin:0;line-height:1.4}.ec-page-status{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:4px}.ec-status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-status-dot.stopped{background:#ef4444}.ec-status-label{font-size:.82em;font-weight:600;color:#22c55e}.ec-status-label.stopped{color:#ef4444}.ec-status-time{font-size:.75em;color:#d1d5db;margin-left:4px}.ec-dark .ec-page-header{border-bottom-color:#374151}.ec-dark .ec-page-title{color:#f3f4f6}.ec-dark .ec-page-subtitle{color:#9ca3af}';
-		document.head.appendChild(s);
-	}
-	var now = lastUpdate || new Date().toLocaleString('zh-CN', {hour12:false});
-	return E('div', {'class':'ec-page-header'}, [
-		E('div', {}, [
-			E('h2', {'class':'ec-page-title'}, title),
-			E('p', {'class':'ec-page-subtitle'}, subtitle)
-		]),
-		E('div', {'class':'ec-page-status'}, [
-			E('span', {'class':'ec-status-dot' + (isRunning ? '' : ' stopped')}),
-			E('span', {'class':'ec-status-label' + (isRunning ? '' : ' stopped')}, isRunning ? '运行中' : '已停止'),
-			E('span', {'class':'ec-status-time'}, '最近更新 ' + now)
-		])
-	]);
-}
-
-var BORDER_COLORS = {
-	'telegram': '#0088cc', 'ntfy': '#4caf50', 'wechat': '#07c160',
-	'bark': '#ff6b6b', 'pushplus': '#ff9800',
-	'serverchan': '#e74c3c', 'serverchan3': '#9b59b6'
-};
-
-var SCRIPT_MAP = {
-	'telegram': '/usr/bin/notifier_telegram.sh',
-	'ntfy': '/usr/bin/notifier_ntfy.sh',
-	'wechat': '/usr/bin/notifier_wechat.sh',
-	'bark': '/usr/bin/notifier_bark.sh',
-	'pushplus': '/usr/bin/notifier_pushplus.sh',
-	'serverchan': '/usr/bin/notifier_serverchan.sh',
-	'serverchan3': '/usr/bin/notifier_serverchan3.sh'
-};
+/* ── 美化 LuCI 顶部 Tab 菜单 ── */
+;(function(){
+	if(document.getElementById('ec-tab-css-v2'))return;
+	var s=document.createElement('style');s.id='ec-tab-css-v2';
+	s.textContent=[
+		/* 卡片 */
+		'.cbi-section{border-radius:10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;margin-bottom:14px!important}',
+		'.cbi-section>h3{border-radius:10px 10px 0 0!important;padding:12px 16px!important;font-size:.95em!important;font-weight:700!important;border-bottom:1px solid #f3f4f6!important}',
+		/* Tab 容器 */
+		'ul.tabs{display:flex!important;gap:0!important;padding:0!important;margin:0 0 14px!important;background:#fff!important;border-radius:0 0 10px 10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;border-top:none!important;position:relative!important}',
+		/* 顶部渐变条 — 作为 ul.tabs 的 ::before 伪元素 */
+		'ul.tabs::before{content:""!important;display:block!important;position:absolute!important;top:-4px!important;left:0!important;right:0!important;height:4px!important;background:linear-gradient(90deg,#c4b5fd,#7c3aed,#4c1d95)!important;border-radius:10px 10px 0 0!important;z-index:1!important}',
+		'ul.tabs>li{margin:0!important;border-bottom:none!important;background:transparent!important;border-radius:0!important}',
+		'ul.tabs>li>a{display:block!important;padding:10px 18px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important}',
+		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#faf5ff!important;border-bottom-color:#e9d5ff!important}',
+		'ul.tabs>li.active,ul.tabs>li[class~="active"]{border-bottom:none!important;background:transparent!important}',
+		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#7c3aed!important;border-bottom:2px solid #7c3aed!important;font-weight:600!important;background:#faf5ff!important}',
+		/* 按钮 */
+		'.cbi-page-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;padding:14px 0!important;margin-top:14px!important;border-top:1px solid #e5e7eb!important}',
+		'.cbi-button-apply{background:#7c3aed!important;color:#fff!important;border:none!important;border-radius:6px!important;padding:8px 20px!important;font-weight:600!important;cursor:pointer!important}',
+		'.cbi-button-apply:hover{background:#6d28d9!important}'
+	].join('\n');
+	document.head.appendChild(s);
+})();
 
 return view.extend({
-	load: function() {
-		return Promise.all([uci.load('eventcenter')]);
-	},
+    load: function() {
+        return uci.load('eventcenter');
+    },
 
-	render: function() {
-		var m, s, o;
-		m = new form.Map('eventcenter', '通知渠道', '配置消息推送渠道，可同时启用多个。');
+    render: function() {
+        var sections = {};
+        uci.sections('eventcenter', null, function(s) {
+            sections[s['.name']] = s;
+        });
 
-		/* Telegram */
-		s = m.section(form.NamedSection, 'telegram', 'notifier', '✈️ Telegram');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用', '启用 Telegram Bot 推送');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'token', 'Bot Token', '从 @BotFather 获取');
-		o.placeholder = '123456:ABC-DEF...'; o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'chatid', 'Chat ID', '接收消息的 Chat ID');
-		o.placeholder = '123456789'; o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.ListValue, 'parse_mode', '消息格式');
-		o.value('HTML'); o.value('Markdown'); o.default = 'HTML'; o.depends('enable', '1'); o.rmempty = false;
+        function getVal(section, key) {
+            return (sections[section] && sections[section][key]) || '';
+        }
 
-		/* Ntfy */
-		s = m.section(form.NamedSection, 'ntfy', 'notifier', '🔔 Ntfy');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用', '启用 Ntfy 自托管推送');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'url', '服务器地址');
-		o.placeholder = 'https://ntfy.sh'; o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'topic', 'Topic');
-		o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'user', '用户名');
-		o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'pass', '密码');
-		o.password = true; o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'token', 'Access Token', 'Bearer Token 认证（优先于用户名密码）');
-		o.password = true; o.depends('enable', '1'); o.rmempty = true;
+        var channels = [
+            { id: 'telegram', label: 'Telegram', icon: '✈️', color: '#0088cc',
+              fields: [
+                  { label: 'Bot Token', value: getVal('telegram', 'bot_token') || '未配置', type: 'password' },
+                  { label: 'Chat ID', value: getVal('telegram', 'chat_id') || '未配置', type: 'password' },
+                  { label: '消息格式', value: getVal('telegram', 'parse_mode') || 'Markdown', type: 'text' }
+              ],
+              previewBg: '#e3f2fd', previewColor: '#1976d2' },
+            { id: 'ntfy', label: 'Ntfy', icon: '🔔', color: '#4caf50',
+              fields: [
+                  { label: '服务器地址', value: getVal('ntfy', 'url') || '未配置', type: 'text' },
+                  { label: '主题', value: getVal('ntfy', 'topic') || '未配置', type: 'text' },
+                  { label: '用户名', value: getVal('ntfy', 'user') || '未配置', type: 'text' },
+                  { label: '密码', value: getVal('ntfy', 'pass') ? '••••••••' : '未配置', type: 'password' }
+              ],
+              previewBg: '#e8f5e9', previewColor: '#2e7d32' },
+            { id: 'wecom', label: '企业微信', icon: '💬', color: '#07c160',
+              fields: [
+                  { label: 'Webhook URL', value: getVal('wechat', 'webhook') || '未配置', type: 'text' }
+              ],
+              previewBg: '#f0fdf4', previewColor: '#07c160' },
+            { id: 'bark', label: 'Bark', icon: '🔔', color: '#ff3b30',
+              fields: [
+                  { label: '服务器地址', value: getVal('bark', 'server') || '未配置', type: 'text' },
+                  { label: '设备 Key', value: getVal('bark', 'key') || '未配置', type: 'text' }
+              ],
+              previewBg: '#fff3f0', previewColor: '#ff3b30' },
+            { id: 'pushplus', label: 'PushPlus', icon: '➕', color: '#00bcd4',
+              fields: [
+                  { label: 'Token', value: getVal('pushplus', 'token') || '未配置', type: 'text' }
+              ],
+              previewBg: '#e0f7fa', previewColor: '#00acc1' },
+            { id: 'serverchan', label: 'Server酱', icon: '📮', color: '#ff6b6b',
+              fields: [
+                  { label: 'SendKey', value: getVal('serverchan', 'key') || '未配置', type: 'text' },
+                  { label: '消息标题 (可选)', value: getVal('serverchan', 'title') || '可选, 自定义消息标题', type: 'text' }
+              ],
+              previewBg: '#fff5f5', previewColor: '#e53935' },
+        ];
 
-		/* 企业微信 */
-		s = m.section(form.NamedSection, 'wechat', 'notifier', '💬 企业微信');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'webhook', 'Webhook URL');
-		o.depends('enable', '1'); o.rmempty = true;
+        function buildField(f) {
+            return E('div', { 'style': 'margin-bottom:10px' }, [
+                E('label', { 'style': 'font-size:.78em;color:#6b7280;margin-bottom:3px;display:block' }, [f.label]),
+                E('input', {
+                    'type': f.type,
+                    'value': f.value,
+                    'readonly': '',
+                    'style': 'width:100%;padding:8px 10px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;font-size:.82em;color:#374151;box-sizing:border-box'
+                })
+            ]);
+        }
 
-		/* Bark */
-		s = m.section(form.NamedSection, 'bark', 'notifier', '🔔 Bark');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'server', '服务器地址');
-		o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'device_key', 'Device Key');
-		o.depends('enable', '1'); o.rmempty = true;
+        function buildPreview(ch) {
+            return E('div', { 'style': 'background:' + ch.previewBg + ';border-radius:12px;padding:12px;flex:1' }, [
+                E('div', { 'style': 'display:flex;align-items:center;gap:6px;margin-bottom:8px' }, [
+                    E('span', { 'style': 'font-size:1.1em' }, [ch.icon]),
+                    E('strong', { 'style': 'font-size:.85em;color:' + ch.previewColor }, ['EventCenter']),
+                ]),
+                E('div', { 'style': 'font-size:.82em;color:#374151;line-height:1.5' }, [
+                    '📌 节点自动切换',
+                    E('br'),
+                    '美国原生02 (不可达) → 美国01-AnyTLS'
+                ])
+            ]);
+        }
 
-		/* PushPlus */
-		s = m.section(form.NamedSection, 'pushplus', 'notifier', '📨 PushPlus');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'token', 'Token');
-		o.depends('enable', '1'); o.rmempty = true;
+        function buildCard(ch) {
+            var on = getVal(ch.id, 'enable') === '1';
+            var statusText = on ? '已启用' : '未启用';
+            var statusColor = on ? '#22c55e' : '#9ca3af';
+            var toggleBg = on ? '#7c3aed' : '#d1d5db';
 
-		/* Server酱 */
-		s = m.section(form.NamedSection, 'serverchan', 'notifier', '📮 Server酱');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'sendkey', 'SendKey');
-		o.depends('enable', '1'); o.rmempty = true;
+            var fieldsEl = E('div', { 'style': 'flex:1;min-width:0' });
+            ch.fields.forEach(function(f) {
+                fieldsEl.appendChild(buildField(f));
+            });
 
-		/* Server酱³ */
-		s = m.section(form.NamedSection, 'serverchan3', 'notifier', '📮 Server酱³');
-		s.addremove = false; s.anonymous = false;
-		o = s.option(form.Flag, 'enable', '启用');
-		o.default = '0'; o.rmempty = false;
-		o = s.option(form.Value, 'sendkey', 'SendKey');
-		o.depends('enable', '1'); o.rmempty = true;
-		o = s.option(form.Value, 'title', '消息标题');
-		o.depends('enable', '1'); o.rmempty = true;
+            var testBtn;
+            if (ch.id === 'ntfy') {
+                testBtn = E('button', {
+                    'class': 'btn cbi-button-action',
+                    'style': 'padding:6px 16px;border:1.5px solid #7c3aed;border-radius:6px;background:transparent;color:#7c3aed;font-size:.8em;font-weight:600;cursor:pointer',
+                    'click': function() {
+                        this.textContent = '发送中...';
+                        var btn = this;
+                        XHR.get('/cgi-bin/luci/admin/system/eventcenter/test_ntfy', null, function(x, data) {
+                            btn.textContent = data && data.success ? '✅ 成功' : '❌ 失败';
+                            setTimeout(function() { btn.textContent = '发送测试'; }, 2000);
+                        });
+                    }
+                }, ['发送测试']);
+            } else {
+                testBtn = E('button', {
+                    'style': 'padding:6px 16px;border:1.5px solid #d1d5db;border-radius:6px;background:transparent;color:#9ca3af;font-size:.8em;cursor:not-allowed',
+                    'disabled': ''
+                }, ['发送测试']);
+            }
 
-		return m.render().then(function(node) {
-			/* 统一页面头部 */
-			var notifierNames = ['telegram','ntfy','wechat','bark','pushplus','serverchan','serverchan3'];
-			var anyRunning = notifierNames.some(function(k) { return uci.get('eventcenter', k, 'enable') === '1'; });
-			var header = ecPageHeader('通知渠道', '配置消息推送渠道，确保事件通知送达', anyRunning);
-			node.insertBefore(header, node.firstChild);
+            return E('div', { 'style': 'background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:12px' }, [
+                E('div', { 'style': 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px' }, [
+                    E('div', { 'style': 'display:flex;align-items:center;gap:10px' }, [
+                        E('div', { 'style': 'width:36px;height:36px;border-radius:10px;background:' + ch.color + '15;display:flex;align-items:center;justify-content:center;font-size:1.2em' }, [ch.icon]),
+                        E('strong', { 'style': 'font-size:1em;color:#1f2937' }, [ch.label]),
+                    ]),
+                    E('div', { 'style': 'display:flex;align-items:center;gap:10px' }, [
+                        E('span', { 'style': 'font-size:.8em;color:' + statusColor + ';display:flex;align-items:center;gap:4px' }, [
+                            E('span', { 'style': 'width:7px;height:7px;border-radius:50%;background:' + statusColor + ';display:inline-block' }),
+                            statusText
+                        ]),
+                        E('div', { 'style': 'width:40px;height:22px;border-radius:11px;background:' + toggleBg + ';position:relative;cursor:pointer' }, [
+                            E('div', { 'style': 'width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;' + (on ? 'right:2px' : 'left:2px') + ';box-shadow:0 1px 3px rgba(0,0,0,.2)' })
+                        ]),
+                    ])
+                ]),
+                E('div', { 'style': 'display:flex;gap:20px;align-items:stretch' }, [
+                    fieldsEl,
+                    E('div', { 'style': 'width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:10px' }, [
+                        buildPreview(ch),
+                        E('div', { 'style': 'text-align:right' }, [testBtn])
+                    ])
+                ])
+            ]);
+        }
 
-			/* 为每个 section 添加边框色和测试按钮 */
-			var sections = node.querySelectorAll('.cbi-section');
-			var channelList = [
-					['Server酱³', 'serverchan3'],
-					['Server酱', 'serverchan'],
-					['Telegram', 'telegram'],
-					['Ntfy', 'ntfy'],
-					['企业微信', 'wechat'],
-					['Bark', 'bark'],
-					['PushPlus', 'pushplus']
-				];
+        var container = E('div', { 'style': 'padding:0 20px' });
 
-			sections.forEach(function(sec) {
-				var title = sec.querySelector('h3');
-				if (!title) return;
-				var text = title.textContent;
-				var matched = null;
-				for (var ci = 0; ci < channelList.length; ci++) {
-					if (text.indexOf(channelList[ci][0]) !== -1) {
-						matched = channelList[ci]; break;
-					}
-				}
-				if (!matched) return;
-				var channelKey = matched[1];
-				sec.style.borderTopColor = BORDER_COLORS[channelKey] || '#6b7280';
+        // Header
+        var anyEnabled = channels.some(function(ch) { return getVal(ch.id, 'enable') === '1'; });
+        container.appendChild(ecHdr.makeHeader('通知渠道', '配置消息推送渠道，确保事件通知送达', anyEnabled));
 
-					var btn = E('button', { 'class': 'ec-test-btn' }, '发送测试');
-						btn.addEventListener('click', function() {
-							var el = this;
-							var origText = el.textContent;
-							el.textContent = '测试中...'; el.disabled = true;
-							var scriptPath = SCRIPT_MAP[channelKey];
-							if (!scriptPath) {
-								el.textContent = '✗ 无脚本';
-								setTimeout(function() { el.textContent = origText; el.disabled = false; }, 2000);
-								return;
-							}
-							fs.exec(scriptPath, ['测试消息：EventCenter 测试通知']).then(function(res) {
-								if (res.code === 0) {
-									el.textContent = '✓ 已发送';
-									el.style.borderColor = '#22c55e'; el.style.color = '#22c55e';
-								} else {
-									el.textContent = '✗ 失败';
-									el.style.borderColor = '#dc2626'; el.style.color = '#dc2626';
-								}
-								setTimeout(function() {
-									el.textContent = origText;
-									el.style.borderColor = '#3b82f6'; el.style.color = '#3b82f6';
-									el.disabled = false;
-								}, 2000);
-							});
-						});
-						sec.appendChild(btn);
-						});
-			/* 追加保存并重启按钮 */
-			function addRestartBtn(container) {
-				var restartBtn = E('button', { 'class': 'cbi-button-apply', 'style': 'margin-left:8px' }, '保存并重启');
-				restartBtn.addEventListener('click', function() {
-					var btn = this;
-					btn.textContent = '保存中...'; btn.disabled = true;
-					uci.save().then(function() { return uci.apply(); }).then(function() {
-						btn.textContent = '重启中...';
-						return fs.exec('/etc/init.d/eventcenter', ['restart']);
-					}).then(function(res) {
-						btn.textContent = (res && res.code === 0) ? '✓ 已完成' : '✓ 已保存';
-						btn.style.background = '#22c55e'; btn.style.borderColor = '#22c55e';
-						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-					}).catch(function() {
-						btn.textContent = '✗ 失败'; btn.style.background = '#dc2626'; btn.style.borderColor = '#dc2626';
-						setTimeout(function() { btn.textContent = '保存并重启'; btn.style.background = '#f59e0b'; btn.style.borderColor = '#f59e0b'; btn.disabled = false; }, 3000);
-					});
-				});
-				container.appendChild(restartBtn);
-			}
-			var pageActions = node.parentElement ? node.parentElement.querySelector('.cbi-page-actions') : null;
-			if (pageActions) {
-				addRestartBtn(pageActions);
-			} else {
-				setTimeout(function() {
-					var pa = document.querySelector('.cbi-page-actions');
-					if (pa) addRestartBtn(pa);
-				}, 200);
-			}
-			return node;
-		});
-	},
+        // Info box
+        container.appendChild(E('div', { 'style': 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.82em;color:#1e40af' }, [
+            '💡 启用渠道后，系统将通过该渠道发送通知。配置请到"设置"页面编辑。'
+        ]));
+
+        // Cards
+        channels.forEach(function(ch) {
+            container.appendChild(buildCard(ch));
+        });
+
+        return container;
+    },
+
+    handleSaveApply: null,
+    handleSave: null,
+    handleReset: null
 });
