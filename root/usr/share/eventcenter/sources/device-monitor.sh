@@ -160,6 +160,20 @@ check() {
     rm -f "$_new_macs" "$_gone_macs"
 }
 
+# --- List devices (for overview page) ---
+
+device_list() {
+    if [ ! -f "$STATE_FILE" ] || [ ! -s "$STATE_FILE" ]; then
+        return 0
+    fi
+    while IFS='\t' read -r _mac _ip _name; do
+        [ -z "$_mac" ] && continue
+        [ -z "$_name" ] && _name="$_mac"
+        [ -z "$_ip" ] && _ip="N/A"
+        printf '%s\t%s\tup\n' "$_name" "$_ip"
+    done < "$STATE_FILE"
+}
+
 # --- Status (for overview page) ---
 
 status() {

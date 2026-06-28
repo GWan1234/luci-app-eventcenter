@@ -78,6 +78,11 @@ return view.extend({
 			'.ec-lbl{font-size:.85em;color:var(--text-color-secondary, #666);margin-top:4px}',
 			'.ec-dev{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-color-light, #f0f0f0)}',
 			'.ec-dev:last-child{border-bottom:none}',
+			'.ec-dev-list{max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color-light,#d1d5db) transparent}',
+			'.ec-dev-list::-webkit-scrollbar{width:6px}',
+			'.ec-dev-list::-webkit-scrollbar-track{background:transparent}',
+			'.ec-dev-list::-webkit-scrollbar-thumb{background:var(--border-color-light,#d1d5db);border-radius:3px}',
+			'.ec-dev-list::-webkit-scrollbar-thumb:hover{background:var(--text-color-secondary,#9ca3af)}',
 			'.ec-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee)}',
 			'.ec-svc-row{display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--background-color-secondary,#f9fafb);border-radius:8px;min-width:0}',
 			'.ec-muted{color:var(--text-color-secondary,#666)}',
@@ -85,7 +90,7 @@ return view.extend({
 		].join(' ');
 		var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 		/* 暗夜模式检测（兼容 Argon 主题手动切换） */
-		(function(){if(document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');var s=document.createElement('style');s.textContent='.ec-dark .ec-card{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}.ec-dark .ec-dev{border-bottom-color:#333!important}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-bar{background:#374151!important}.ec-dark .ec-fill{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.ec-dark .ec-lbl,.ec-dark .ec-muted{color:#9ca3af!important}.ec-dark .ec-svc-row{background:#1f2937!important}.ec-dark .ec-actions{border-top-color:#374151!important}.ec-dark h3{background:#333!important;color:#ccc!important}.ec-dark .ec-page{background:#1e1e1e!important}.ec-dark h2{background:#333!important;color:#ccc!important}.ec-dark{color:#e5e7eb!important}';document.head.appendChild(s)})()
+		(function(){if(document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');var s=document.createElement('style');s.textContent='.ec-dark .ec-card{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}.ec-dark .ec-dev{border-bottom-color:#333!important}.ec-dark .ec-dev-list{scrollbar-color:#4b5563 transparent}.ec-dark .ec-dev-list::-webkit-scrollbar-thumb{background:#4b5563}.ec-dark .ec-dev-list::-webkit-scrollbar-thumb:hover{background:#6b7280}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-bar{background:#374151!important}.ec-dark .ec-fill{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.ec-dark .ec-lbl,.ec-dark .ec-muted{color:#9ca3af!important}.ec-dark .ec-svc-row{background:#1f2937!important}.ec-dark .ec-actions{border-top-color:#374151!important}.ec-dark h3{background:#333!important;color:#ccc!important}.ec-dark .ec-page{background:#1e1e1e!important}.ec-dark h2{background:#333!important;color:#ccc!important}.ec-dark{color:#e5e7eb!important}';document.head.appendChild(s)})()
 
 		var cpuC = hData.cpu > 80 ? '#ef4444' : '#3b82f6';
 		var memC = hData.mem > 80 ? '#ef4444' : '#3b82f6';
@@ -153,8 +158,11 @@ return view.extend({
 			]),
 
 			deviceLines.length > 0 ? E('div', { 'class': 'ec-card' }, [
-				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '🖥️ 设备监控'),
-				E('div', {},
+				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em;display:flex;justify-content:space-between;align-items:center' }, [
+					E('span', {}, '🖥️ 设备监控'),
+					E('span', { 'class': 'ec-muted', 'style': 'font-size:.8em;font-weight:400' }, deviceLines.length + ' 台')
+				]),
+				E('div', { 'class': 'ec-dev-list' },
 					deviceLines.map(function(line) {
 						var p = line.split('	');
 						return E('div', { 'class': 'ec-dev' }, [
