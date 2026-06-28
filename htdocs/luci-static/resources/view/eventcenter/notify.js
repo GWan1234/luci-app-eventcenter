@@ -96,7 +96,7 @@ return view.extend({
         }
 
         function buildCard(ch) {
-            var on = getVal(ch.id, 'enable') === '1';
+            var on = getVal(ch.section, 'enable') === '1';
             var statusText = on ? '已启用' : '未启用';
             var statusColor = on ? '#22c55e' : '#9ca3af';
             var toggleBg = on ? '#7c3aed' : '#d1d5db';
@@ -165,12 +165,12 @@ return view.extend({
         var container = E('div', { 'style': 'padding:0 20px' });
 
         // Header
-        var anyEnabled = channels.some(function(ch) { return getVal(ch.id, 'enable') === '1'; });
+        var anyEnabled = channels.some(function(ch) { return getVal(ch.section, 'enable') === '1'; });
         container.appendChild(ecMakeHdr('通知渠道', '配置消息推送渠道，确保事件通知送达', anyEnabled));
 
         // Info box
         container.appendChild(E('div', { 'style': 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.82em;color:#1e40af' }, [
-            '💡 启用渠道后，系统将通过该渠道发送通知。配置请到"设置"页面编辑。'
+            '💡 直接在此页面编辑配置并保存，或点击开关启用/禁用渠道。'
         ]));
 
         // Cards
