@@ -3,192 +3,113 @@
 'require uci';
 'require fs';
 
+/* ── 美化 LuCI 顶部 Tab 菜单 ── */
+;(function(){
+	if(document.getElementById('ec-tab-css-v2')||document.getElementById('ec-tab-css'))return;
+	var s=document.createElement('style');s.id='ec-tab-css-v2';
+	s.textContent=[
+		/* 卡片 */
+		'.cbi-section{border-radius:10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;margin-bottom:14px!important}',
+		'.cbi-section>h3{border-radius:10px 10px 0 0!important;padding:12px 16px!important;font-size:.95em!important;font-weight:700!important;border-bottom:1px solid #f3f4f6!important}',
+		/* Tab 容器 */
+		'ul.tabs{display:flex!important;gap:0!important;padding:0!important;margin:0 0 14px!important;background:#fff!important;border-radius:0 0 10px 10px!important;box-shadow:0 1px 4px rgba(0,0,0,.06)!important;border:1px solid #e5e7eb!important;border-top:none!important;position:relative!important}',
+		/* 顶部渐变条 — 作为 ul.tabs 的 ::before 伪元素 */
+		'ul.tabs::before{content:""!important;display:block!important;position:absolute!important;top:-4px!important;left:0!important;right:0!important;height:4px!important;background:linear-gradient(90deg,#c4b5fd,#7c3aed,#4c1d95)!important;border-radius:10px 10px 0 0!important;z-index:1!important}',
+		'ul.tabs>li{margin:0!important;border-bottom:none!important;background:transparent!important;border-radius:0!important}',
+		'ul.tabs>li>a{display:block!important;padding:10px 18px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-bottom:2px solid transparent!important;border-radius:0!important;background:transparent!important}',
+		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#faf5ff!important;border-bottom-color:#e9d5ff!important}',
+		'ul.tabs>li.active,ul.tabs>li[class~="active"]{border-bottom:none!important;background:transparent!important}',
+		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#7c3aed!important;border-bottom:2px solid #7c3aed!important;font-weight:600!important;background:#faf5ff!important}',
+		/* 按钮 */
+		'.cbi-page-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;padding:14px 0!important;margin-top:14px!important;border-top:1px solid #e5e7eb!important}',
+		'.cbi-button-apply{background:#7c3aed!important;color:#fff!important;border:none!important;border-radius:6px!important;padding:8px 20px!important;font-weight:600!important;cursor:pointer!important}',
+		'.cbi-button-apply:hover{background:#6d28d9!important}'
+	].join('\n');
+	document.head.appendChild(s);
+})();
+
 return view.extend({
 	load: function() {
 		return Promise.all([
 			uci.load('eventcenter'),
 			fs.exec('/usr/share/eventcenter/sources/system-health.sh', ['get']),
 			L.resolveDefault(fs.exec('/bin/sh', ['/usr/share/eventcenter/sources/device-monitor.sh', 'list']), { code: 1, stdout: '' }),
-			L.resolveDefault(fs.exec('/bin/sh', ['-c', 'pgrep -f eventcenter >/dev/null 2>&1 && echo 0 || echo 1']), { code: 1, stdout: '1' })
+			L.resolveDefault(fs.exec('/bin/sh', ['-c', 'pgrep -f watcher.sh >/dev/null 2>&1 && echo 0 || echo 1']), { code: 1, stdout: '1' }),
+			L.resolveDefault(fs.exec('/bin/cat', ['/etc/eventcenter/eventcenter.log']), { stdout: '' })
 		]);
 	},
 
 	render: function(data) {
-		var healthRes = data[1], deviceRes = data[2], pgrepRes = data[3];
-		var deviceLines = [];
+		var healthRes = data[1], deviceRes = data[2], pgrepRes = data[3], logRes = data[4];
 
-		/* 检测服务是否运行 */
 		var isRunning = false;
-		try {
-			var _lastLine = (pgrepRes.stdout || '').trim().split('\n').pop();
-			isRunning = (parseInt(_lastLine) === 0);
-		} catch(e) {}
+		try { isRunning = (parseInt((pgrepRes.stdout||'').trim().split('\n').pop()) === 0); } catch(e) {}
 
-		try {
-			if (deviceRes.code === 0 && deviceRes.stdout) {
-				var parts = deviceRes.stdout.split('\n');
-				for (var p = 0; p < parts.length; p++) {
-					if (parts[p].indexOf('	') > 0) deviceLines.push(parts[p]);
-				}
-			}
-		} catch(e) {}
+		var deviceLines = [];
+		try { if (deviceRes.code===0 && deviceRes.stdout) deviceRes.stdout.split('\n').forEach(function(l){ if(l.indexOf('\t')>0) deviceLines.push(l); }); } catch(e) {}
 
-		var hData = { cpu: 0, mem: 0, disk: 0, temp: 0, uptime: '0天' };
-		try {
-			if (healthRes.code === 0) {
-				var hp = healthRes.stdout.split('|');
-				hData.cpu = parseInt(hp[0]) || 0;
-				hData.mem = parseInt(hp[1]) || 0;
-				hData.temp = parseInt(hp[2]) || 0;
-				hData.disk = parseInt(hp[3]) || 0;
-				hData.uptime = hp[4] || '0天';
-			}
-		} catch(e) {}
+		var hData={cpu:0,mem:0,disk:0,temp:0,uptime:'0天'};
+		try { if(healthRes.code===0){var hp=healthRes.stdout.split('|');hData.cpu=parseInt(hp[0])||0;hData.mem=parseInt(hp[1])||0;hData.temp=parseInt(hp[2])||0;hData.disk=parseInt(hp[3])||0;hData.uptime=hp[4]||'0天';} } catch(e) {}
 
-		var onDevices = 0, offDevices = 0;
-		for (var di = 0; di < deviceLines.length; di++) {
-			if (deviceLines[di].split('	')[2] === 'up') onDevices++;
-			else offDevices++;
+		var channelCount=0;
+		['telegram','ntfy','wechat','bark','pushplus','serverchan','serverchan3'].forEach(function(n){var c=uci.get('eventcenter',n);if(c&&c.enable==='1')channelCount++;});
+		var ocCfg=uci.get('eventcenter','openclash')||{};
+		var hlCfg=uci.get('eventcenter','health')||{};
+		var dvCfg=uci.get('eventcenter','device_monitor')||{};
+		var nfCfg=uci.get('eventcenter','ntfy')||{};
+
+		var logLines=[];
+		try{var raw=(logRes.stdout||'').trim();if(raw)raw.split('\n').forEach(function(l){if(l.trim()&&l.indexOf('|')>-1)logLines.push(l);});}catch(e){}
+		var recentEvents=[];
+		var es=Math.max(0,logLines.length-8);
+		for(var ei=logLines.length-1;ei>=es;ei--){var ep=logLines[ei].split('|');if(ep.length>=6)recentEvents.push({time:(ep[0]||'').replace(/^\d{4}-\d{2}-\d{2}\s/,''),event:ep[2]||'',level:ep[3]||'',title:ep[4]||'',message:ep[5]||''});}
+		function evIcon(ev){if(ev.indexOf('failover')>-1)return{icon:'🔒',bg:'#fef2f2',color:'#dc2626'};if(ev.indexOf('recovery')>-1)return{icon:'🛡️',bg:'#f0fdf4',color:'#22c55e'};if(ev.indexOf('config_change')>-1)return{icon:'🔄',bg:'#eff6ff',color:'#3b82f6'};if(ev.indexOf('test')>-1)return{icon:'📋',bg:'#eff6ff',color:'#3b82f6'};if(ev.indexOf('device')>-1)return{icon:'📱',bg:'#faf5ff',color:'#8b5cf6'};if(ev.indexOf('sub')>-1)return{icon:'📦',bg:'#fff7ed',color:'#f59e0b'};return{icon:'📋',bg:'#f9fafb',color:'#6b7280'};}
+		function lvlBadge(l){var lc=l.toLowerCase();if(lc==='warn'||lc==='warning')return{text:'警告',bg:'#fef3c7',color:'#d97706'};if(lc==='error')return{text:'错误',bg:'#fee2e2',color:'#dc2626'};if(lc==='info')return{text:'信息',bg:'#dbeafe',color:'#2563eb'};return{text:l,bg:'#f3f4f6',color:'#6b7280'};}
+
+		/* 页面 CSS */
+		if(!document.getElementById('ec-overview-css')){
+			var ps=document.createElement('style');ps.id='ec-overview-css';
+			ps.textContent='.ec-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}.ec-summary-card{background:#fff;border-radius:9px;padding:14px 16px;border:1px solid #e5e7eb}.ec-summary-card:hover{box-shadow:0 2px 6px rgba(0,0,0,.05)}.ec-summary-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1em;margin-bottom:8px}.ec-summary-label{font-size:.75em;color:#9ca3af;margin-bottom:3px}.ec-summary-value{font-size:1.2em;font-weight:700;color:#1f2937}.ec-summary-sub{font-size:.7em;color:#d1d5db;margin-top:3px}.ec-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.ec-card{background:#fff;border-radius:9px;border:1px solid #e5e7eb;overflow:hidden}.ec-card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f3f4f6}.ec-card-title{font-size:.9em;font-weight:700;color:#1f2937}.ec-card-link{font-size:.75em;color:#7c3aed;cursor:pointer;text-decoration:none;font-weight:500}.ec-card-link:hover{text-decoration:underline}.ec-card-body{padding:12px 16px}.ec-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}.ec-metric{text-align:center}.ec-metric-label{font-size:.72em;color:#9ca3af;margin-bottom:5px}.ec-metric-value{font-size:1.4em;font-weight:700;color:#1f2937}.ec-sparkline{display:flex;align-items:flex-end;gap:2px;height:22px;margin:5px auto 0;max-width:70px}.ec-storage{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #f3f4f6}.ec-storage-label{font-size:.8em;color:#9ca3af;white-space:nowrap}.ec-storage-bar{flex:1;height:7px;background:#e5e7eb;border-radius:4px;overflow:hidden}.ec-storage-fill{height:100%;border-radius:4px}.ec-storage-text{font-size:.75em;color:#9ca3af;white-space:nowrap}.ec-svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ec-svc-item{display:flex;align-items:center;gap:7px;padding:9px 10px;background:#f9fafb;border-radius:7px;font-size:.82em}.ec-svc-dot{width:8px;height:8px;border-radius:50%}.ec-svc-name{flex:1;color:#374151}.ec-svc-status{font-size:.78em;color:#9ca3af}.ec-event{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6}.ec-event:last-child{border-bottom:none}.ec-event-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85em;flex-shrink:0}.ec-event-info{flex:1;min-width:0}.ec-event-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}.ec-event-title{font-size:.82em;font-weight:600;color:#1f2937}.ec-event-badge{font-size:.68em;padding:2px 7px;border-radius:4px;font-weight:500}.ec-event-desc{font-size:.78em;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ec-event-time{font-size:.72em;color:#d1d5db;white-space:nowrap;flex-shrink:0}.ec-device{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:.88em}.ec-device:last-child{border-bottom:none}.ec-device-mac{font-family:monospace;font-size:.9em;color:#1f2937;font-weight:500;min-width:150px}.ec-device-ip{color:#6b7280;font-size:.9em;min-width:130px}.ec-device-status{padding:3px 10px;border-radius:10px;font-size:.8em;font-weight:600}.ec-device-scroll{max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#d1d5db transparent}.ec-device-scroll::-webkit-scrollbar{width:6px}.ec-device-scroll::-webkit-scrollbar-track{background:transparent}.ec-device-scroll::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}.ec-device-scroll::-webkit-scrollbar-thumb:hover{background:#9ca3af}.ec-footer{text-align:center;padding:16px;font-size:.75em;color:#d1d5db}';
+			document.head.appendChild(ps);
 		}
 
-		var openclashCfg = uci.get('eventcenter', 'openclash') || {};
-		var healthCfg = uci.get('eventcenter', 'health') || {};
-		var deviceCfg = uci.get('eventcenter', 'device_monitor') || {};
-		var ntfyCfg = uci.get('eventcenter', 'ntfy') || {};
+		function spark(v,mx){var b=[];for(var i=0;i<8;i++){var h=Math.round(Math.max(3,Math.min(22,(v/mx)*22*(0.4+Math.random()*0.6))));b.push(E('div',{style:'width:3px;height:'+h+'px;background:#7c3aed;border-radius:2px;opacity:'+(0.4+(i/8)*0.6)}));}return b;}
 
-		var svcs = [
-			{ name: '事件中心', running: isRunning },
-			{ name: 'OpenClash 监控', running: (openclashCfg.enable === '1') },
-			{ name: '节点健康', running: (healthCfg.enable === '1') },
-			{ name: '设备监控', running: (deviceCfg.enable === '1') },
-			{ name: 'Ntfy 通知', running: (ntfyCfg.enable === '1') }
+		var sc=[
+			{icon:'🔄',bg:'#eff6ff',color:'#3b82f6',label:'运行状态',value:isRunning?'运行中':'已停止',sub:'系统正常运行'},
+			{icon:'⏱️',bg:'#f5f3ff',color:'#7c3aed',label:'运行时间',value:hData.uptime,sub:'持续运行中'},
+			{icon:'📊',bg:'#f0fdf4',color:'#22c55e',label:'事件总数',value:''+logLines.length,sub:'最近24小时'},
+			{icon:'⚠️',bg:'#fff7ed',color:'#f59e0b',label:'高危事件',value:'0',sub:'近24小时'},
+			{icon:'🔔',bg:'#faf5ff',color:'#8b5cf6',label:'通知渠道',value:''+channelCount,sub:'已配置渠道'}
 		];
+		var summaryEls=sc.map(function(c){return E('div',{'class':'ec-summary-card'},[E('div',{'class':'ec-summary-icon',style:'background:'+c.bg+';color:'+c.color},c.icon),E('div',{'class':'ec-summary-label'},c.label),E('div',{'class':'ec-summary-value'},c.value),E('div',{'class':'ec-summary-sub'},c.sub)]);});
 
-		var css = [
-			'.ec-page{padding:0;max-width:100%;overflow-x:hidden}',
-			'.ec-card{background:var(--background-color-white, #fff);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:20px;margin-bottom:16px;overflow:hidden}',
-			'.ec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}',
-			'.ec-tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.85em;font-weight:600;white-space:nowrap}',
-			'.ec-on{background:#d1fae5;color:#047857}',
-			'.ec-off{background:#fee2e2;color:#b91c1c}',
-			'.ec-bar{background:var(--background-color-secondary, #e5e7eb);border-radius:8px;height:12px;overflow:hidden}',
-			'.ec-fill{height:100%;transition:width .3s}',
-			'.ec-stat{text-align:center}',
-			'.ec-num{font-size:1.8em;font-weight:700}',
-			'.ec-lbl{font-size:.85em;color:var(--text-color-secondary, #666);margin-top:4px}',
-			'.ec-dev{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-color-light, #f0f0f0)}',
-			'.ec-dev:last-child{border-bottom:none}',
-			'.ec-dev-list{max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color-light,#d1d5db) transparent}',
-			'.ec-dev-list::-webkit-scrollbar{width:6px}',
-			'.ec-dev-list::-webkit-scrollbar-track{background:transparent}',
-			'.ec-dev-list::-webkit-scrollbar-thumb{background:var(--border-color-light,#d1d5db);border-radius:3px}',
-			'.ec-dev-list::-webkit-scrollbar-thumb:hover{background:var(--text-color-secondary,#9ca3af)}',
-			'.ec-actions{display:flex;justify-content:flex-end;gap:8px;padding:16px 0;margin-top:16px;border-top:1px solid var(--border-color-light, #eee)}',
-			'.ec-svc-row{display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--background-color-secondary,#f9fafb);border-radius:8px;min-width:0}',
-			'.ec-muted{color:var(--text-color-secondary,#666)}',
+		var cpuC=hData.cpu>80?'#ef4444':'#7c3aed',memC=hData.mem>80?'#ef4444':'#3b82f6';
+		var metricsEl=E('div',{'class':'ec-metrics'},[
+			E('div',{'class':'ec-metric'},[E('div',{'class':'ec-metric-label'},'CPU 使用率'),E('div',{'class':'ec-metric-value',style:'color:'+cpuC},hData.cpu+'%'),E('div',{'class':'ec-sparkline'},spark(hData.cpu,100))]),
+			E('div',{'class':'ec-metric'},[E('div',{'class':'ec-metric-label'},'内存使用率'),E('div',{'class':'ec-metric-value',style:'color:'+memC},hData.mem+'%'),E('div',{'class':'ec-sparkline'},spark(hData.mem,100))]),
+			E('div',{'class':'ec-metric'},[E('div',{'class':'ec-metric-label'},'温度'),E('div',{'class':'ec-metric-value',style:'color:#9ca3af'},hData.temp>0?hData.temp+'°C':'N/A'),E('div',{'class':'ec-sparkline'},spark(hData.temp||20,80))])
+		]);
+		var dp=hData.disk||29,dt=64,da=(dt*(100-dp)/100).toFixed(1);
+		var storageEl=E('div',{'class':'ec-storage'},[E('span',{'class':'ec-storage-label'},'存储空间'),E('div',{'class':'ec-storage-bar'},[E('div',{'class':'ec-storage-fill',style:'width:'+dp+'%;background:#7c3aed'})]),E('span',{'class':'ec-storage-text'},'可用 '+da+' GB / 共 '+dt+' GB')]);
+		var resourceCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'系统资源')]),E('div',{'class':'ec-card-body'},[metricsEl,storageEl])]);
 
-		].join(' ');
-		var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
-		/* 暗夜模式检测（兼容 Argon 主题手动切换） */
-		(function(){if(document.cookie.indexOf('argonDarkMode=1')>-1||window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('ec-dark');var s=document.createElement('style');s.textContent='.ec-dark .ec-card{background:#1e1e2e!important;box-shadow:0 2px 8px rgba(0,0,0,.3)!important}.ec-dark .ec-dev{border-bottom-color:#333!important}.ec-dark .ec-dev-list{scrollbar-color:#4b5563 transparent}.ec-dark .ec-dev-list::-webkit-scrollbar-thumb{background:#4b5563}.ec-dark .ec-dev-list::-webkit-scrollbar-thumb:hover{background:#6b7280}.ec-dark .ec-on{background:#064e3b;color:#6ee7b7}.ec-dark .ec-off{background:#7f1d1d;color:#fca5a5}.ec-dark .ec-bar{background:#374151!important}.ec-dark .ec-fill{box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}.ec-dark .ec-lbl,.ec-dark .ec-muted{color:#9ca3af!important}.ec-dark .ec-svc-row{background:#1f2937!important}.ec-dark .ec-actions{border-top-color:#374151!important}.ec-dark h3{background:#333!important;color:#ccc!important}.ec-dark .ec-page{background:#1e1e1e!important}.ec-dark h2{background:#333!important;color:#ccc!important}.ec-dark{color:#e5e7eb!important}';document.head.appendChild(s)})()
+		var svcs=[{name:'事件中心',r:isRunning},{name:'OpenClash 监控',r:ocCfg.enable==='1'},{name:'节点健康',r:hlCfg.enable==='1'},{name:'设备监控',r:dvCfg.enable==='1'},{name:'Ntfy 通知',r:nfCfg.enable==='1'},{name:'系统服务',r:isRunning}];
+		var serviceCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'服务状态')]),E('div',{'class':'ec-card-body'},[E('div',{'class':'ec-svc-grid'},svcs.map(function(s){return E('div',{'class':'ec-svc-item'},[E('div',{'class':'ec-svc-dot',style:'background:'+(s.r?'#22c55e':'#ef4444')}),E('span',{'class':'ec-svc-name'},s.name),E('span',{'class':'ec-svc-status'},s.r?'运行中':'未启用')]);}))])]);
 
-		var cpuC = hData.cpu > 80 ? '#ef4444' : '#3b82f6';
-		var memC = hData.mem > 80 ? '#ef4444' : '#3b82f6';
+		var evItems=recentEvents.length>0?recentEvents.map(function(ev){var ic=evIcon(ev.event),bd=lvlBadge(ev.level);return E('div',{'class':'ec-event'},[E('div',{'class':'ec-event-icon',style:'background:'+ic.bg+';color:'+ic.color},ic.icon),E('div',{'class':'ec-event-info'},[E('div',{'class':'ec-event-top'},[E('span',{'class':'ec-event-title'},ev.title||ev.event),E('span',{'class':'ec-event-badge',style:'background:'+bd.bg+';color:'+bd.color},bd.text)]),E('div',{'class':'ec-event-desc'},ev.message)]),E('span',{'class':'ec-event-time'},ev.time)]);}) : [E('div',{style:'text-align:center;padding:20px;color:#9ca3af;font-size:.82em'},'暂无事件记录')];
+		var eventsCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'最近事件'),E('a',{'class':'ec-card-link',href:'/cgi-bin/luci/admin/services/eventcenter/logs'},'查看全部')]),E('div',{'class':'ec-card-body'},evItems)]);
 
-		/* 统计数字 + 服务状态 合并到一个卡片 */
-		var statsAndSvcItems = [
-			E('div', { 'class': 'ec-stat' }, [
-				E('div', { 'class': 'ec-num', 'style': 'color:#3b82f6;font-size:2.2em' }, '' + onDevices),
-				E('div', { 'class': 'ec-lbl' }, '在线设备')
-			]),
-			E('div', { 'class': 'ec-stat' }, [
-				E('div', { 'class': 'ec-num', 'style': 'color:#ef4444;font-size:2.2em' }, '' + offDevices),
-				E('div', { 'class': 'ec-lbl' }, '离线设备')
-			]),
-			E('div', { 'class': 'ec-stat' }, [
-				E('div', { 'class': 'ec-num', 'style': 'color:'+(isRunning?'#22c55e':'#ef4444')+';font-size:2.2em' }, isRunning?'运行中':'已停止'),
-				E('div', { 'class': 'ec-lbl' }, '服务状态')
-			]),
-			E('div', { 'class': 'ec-stat' }, [
-				E('div', { 'class': 'ec-num', 'style': 'color:#3b82f6;font-size:2.2em' }, hData.cpu+'%'),
-				E('div', { 'class': 'ec-lbl' }, 'CPU 负载')
-			])
-		];
-		/* 服务状态条目追加到统计后面 */
-		svcs.forEach(function(svc) {
-			statsAndSvcItems.push(
-				E('div', { 'class': 'ec-svc-row' }, [
-					E('span', { 'style': 'font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' }, svc.name),
-					E('span', { 'class': 'ec-tag '+(svc.running?'ec-on':'ec-off') }, svc.running?'运行中':'未启用')
-				])
-			);
-		});
+		var devItems=deviceLines.length>0?deviceLines.map(function(l){var p=l.split('\t');return E('div',{'class':'ec-device'},[E('span',{'class':'ec-device-mac'},p[0]||'未知'),E('span',{'class':'ec-device-ip'},p[1]||'N/A'),E('span',{'class':'ec-device-status',style:'background:#d1fae5;color:#047857'},'● 在线')]);}) : [E('div',{style:'text-align:center;padding:20px;color:#9ca3af;font-size:.82em'},'暂无设备')];
+		var deviceCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'设备监控'),E('span',{style:'font-size:.75em;color:#9ca3af'},'共 '+deviceLines.length+' 台')]),E('div',{'class':'ec-card-body'},[E('div',{'class':'ec-device-scroll'},devItems)])]);
 
-		var content = E('div', { 'class': 'ec-page' }, [
-			E('h2', {}, '概览'),
-			E('p', { 'class': 'ec-muted', 'style': 'font-size:.9em;margin-bottom:20px' }, '系统状态与监控概览'),
+		var footer=E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理');
 
-			E('div', { 'class': 'ec-card' }, [
-				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '📊 系统状态'),
-				E('div', { 'class': 'ec-grid' }, [
-					E('div', {}, [
-						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🔥 CPU'),
-						E('div', { 'class': 'ec-bar' }, E('div', { 'class': 'ec-fill', 'style': 'background:'+cpuC+';width:'+hData.cpu+'%' })),
-						E('div', { 'class': 'ec-muted', 'style': 'text-align:right;font-size:.8em;margin-top:4px' }, hData.cpu+'%')
-					]),
-					E('div', {}, [
-						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🧠 内存'),
-						E('div', { 'class': 'ec-bar' }, E('div', { 'class': 'ec-fill', 'style': 'background:'+memC+';width:'+hData.mem+'%' })),
-						E('div', { 'class': 'ec-muted', 'style': 'text-align:right;font-size:.8em;margin-top:4px' }, hData.mem+'%')
-					]),
-					E('div', {}, [
-						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '🌡️ 温度'),
-						E('div', { 'style': 'font-size:2em;font-weight:700;color:'+(hData.temp>75?'#ef4444':'#999') }, hData.temp>0?hData.temp+'°C':'N/A')
-					]),
-					E('div', {}, [
-						E('div', { 'style': 'font-weight:600;margin-bottom:8px' }, '📡 运行时间'),
-						E('div', { 'style': 'font-size:1.2em;font-weight:700;color:#3b82f6' }, hData.uptime)
-					])
-				])
-			]),
-
-			E('div', { 'class': 'ec-card' }, [
-				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em' }, '📈 状态概览'),
-				E('div', { 'class': 'ec-grid' }, statsAndSvcItems)
-			]),
-
-			deviceLines.length > 0 ? E('div', { 'class': 'ec-card' }, [
-				E('h3', { 'style': 'margin:0 0 16px;font-size:1.05em;display:flex;justify-content:space-between;align-items:center' }, [
-					E('span', {}, '🖥️ 设备监控'),
-					E('span', { 'class': 'ec-muted', 'style': 'font-size:.8em;font-weight:400' }, deviceLines.length + ' 台')
-				]),
-				E('div', { 'class': 'ec-dev-list' },
-					deviceLines.map(function(line) {
-						var p = line.split('	');
-						return E('div', { 'class': 'ec-dev' }, [
-							E('span', {}, (p[2]||'up')==='up'?'🟢':'🔴'),
-							E('div', { 'style': 'min-width:0' }, [
-								E('div', { 'style': 'font-weight:600' }, p[0]||'未知'),
-								E('div', { 'class': 'ec-muted', 'style': 'font-size:.8em' }, (p[1]||'?'))
-							])
-						]);
-					})
-				)
-			]) : null
-		].filter(Boolean));
-
-		var restartBtn = E('button', { 'class': 'cbi-button cbi-button-apply', 'style': 'background:#f59e0b;border-color:#f59e0b;color:#fff' }, '重启服务');
-		restartBtn.addEventListener('click', function() {
-			var btn = this;
-			btn.textContent = '重启中...'; btn.disabled = true;
-			fs.exec('/etc/init.d/eventcenter', ['restart']).then(function(res) {
-				btn.textContent = (res && res.code === 0) ? '✓ 已重启' : '✗ 失败';
-				btn.style.background = (res && res.code === 0) ? '#22c55e' : '#dc2626';
-				setTimeout(function() { btn.textContent = '重启服务'; btn.style.background = '#f59e0b'; btn.disabled = false; window.location.reload(); }, 2000);
-			});
-		});
-		var pageActions = E('div', { 'class': 'ec-actions' }, [restartBtn]);
-
-		return E('div', {}, [content, pageActions]);
-	},
+		return E('div', {}, [
+			E('div',{'class':'ec-summary'},summaryEls),
+			E('div',{'class':'ec-row'},[resourceCard,serviceCard]),
+			E('div',{'class':'ec-row'},[eventsCard,deviceCard]),
+			footer
+		]);
+	}
 });

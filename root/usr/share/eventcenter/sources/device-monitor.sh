@@ -23,8 +23,9 @@ get_all_devices() {
         }' /tmp/dhcp.leases
 
         # ARP table: IP HWType Flags HWAddr Mask Device
-        awk 'NR > 1 && $3 ~ /^[0-9a-fA-F:]+$/ {
-            mac = toupper($3)
+        # Only include reachable (Flags 0x2) entries, skip incomplete (0x0)
+        awk 'NR > 1 && $3 == "0x2" && $4 ~ /^[0-9a-fA-F:]+$/ && $4 != "00:00:00:00:00:00" {
+            mac = toupper($4)
             ip = $1
             printf "%s\t%s\t\n", mac, ip
         }' /proc/net/arp 2>/dev/null
@@ -163,15 +164,9 @@ check() {
 # --- List devices (for overview page) ---
 
 device_list() {
-    if [ ! -f "$STATE_FILE" ] || [ ! -s "$STATE_FILE" ]; then
-        return 0
+    if [ -f "$STATE_FILE" ] && [ -s "$STATE_FILE" ]; then
+        cat "$STATE_FILE"
     fi
-    while IFS='\t' read -r _mac _ip _name; do
-        [ -z "$_mac" ] && continue
-        [ -z "$_name" ] && _name="$_mac"
-        [ -z "$_ip" ] && _ip="N/A"
-        printf '%s\t%s\tup\n' "$_name" "$_ip"
-    done < "$STATE_FILE"
 }
 
 # --- Status (for overview page) ---
