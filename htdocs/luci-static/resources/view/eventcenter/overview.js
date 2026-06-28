@@ -5,7 +5,7 @@
 if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.ec-hdr-top{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-bottom{display:flex;align-items:center;gap:6px}.ec-hdr-time{font-size:.78em;color:#9ca3af}.ec-hdr-refresh{background:none;border:none;cursor:pointer;font-size:1em;color:#9ca3af;padding:2px;border-radius:4px;transition:all .15s}.ec-hdr-refresh:hover{background:#f3f4f6;color:#374151}';document.head.appendChild(hs)}
 function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div');h.className='ec-hdr';h.innerHTML='<div class="ec-hdr-left"><h2>'+title+'</h2><p>'+subtitle+'</p></div><div class="ec-hdr-right"><div class="ec-hdr-top"><span class="ec-hdr-dot" style="background:'+(isRunning?'#22c55e':'#ef4444')+'"></span><span class="ec-hdr-status">'+(isRunning?'运行中':'已停止')+'</span></div><div class="ec-hdr-bottom"><span class="ec-hdr-time">最后更新: '+new Date().toLocaleString('zh-CN')+'</span><button class="ec-hdr-refresh" title="刷新">⟳</button></div></div>';h.querySelector('.ec-hdr-refresh').addEventListener('click',function(){window.location.reload()});return h}
 
-/* ── 统一 Tab 菜单样式（v3 — 胶囊风格 + 同步防闪烁）── */
+/* ── 统一 Tab 菜单样式（v3 — 胶囊风格 + MutationObserver 防闪烁）── */
 ;(function(){
 	if(document.getElementById('ec-tab-css-v3'))return;
 	var s=document.createElement('style');s.id='ec-tab-css-v3';
@@ -19,9 +19,11 @@ function ecMakeHdr(title,subtitle,isRunning){var h=document.createElement('div')
 		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#fff!important;background:#7c3aed!important;font-weight:600!important;border-color:#7c3aed!important;box-shadow:0 2px 8px rgba(124,58,237,.25)!important}'
 	].join('\n');
 	document.head.appendChild(s);
-	/* 同步标记已有 tab，避免异步延迟导致闪烁 */
-	var tabs=document.querySelectorAll('ul.tabs');
-	for(var i=0;i<tabs.length;i++) tabs[i].classList.add('ec-ready');
+	/* MutationObserver: tab 插入 DOM 时立即标记 ec-ready，浏览器 repaint 前完成 */
+	function markReady(n){if(n.nodeType!==1)return;if(n.tagName==='UL'&&n.classList.contains('tabs'))n.classList.add('ec-ready');var q=n.querySelectorAll?n.querySelectorAll('ul.tabs'):[];for(var i=0;i<q.length;i++)q[i].classList.add('ec-ready')}
+	var obs=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var nn=muts[i].addedNodes;for(var j=0;j<nn.length;j++)markReady(nn[j])}});
+	obs.observe(document.documentElement,{childList:true,subtree:true});
+	markReady(document.documentElement);
 })();
 
 return view.extend({

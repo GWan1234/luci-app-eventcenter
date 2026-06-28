@@ -4,7 +4,7 @@
 'require fs';
 'require uci';
 
-/* ── 统一 Tab 菜单样式（v3 — 胶囊风格 + 同步防闪烁）── */
+/* ── 统一 Tab 菜单样式（v3 — 胶囊风格 + MutationObserver 防闪烁）── */
 ;(function(){
 	if(document.getElementById('ec-tab-css-v3'))return;
 	var s=document.createElement('style');s.id='ec-tab-css-v3';
@@ -18,9 +18,11 @@
 		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#fff!important;background:#7c3aed!important;font-weight:600!important;border-color:#7c3aed!important;box-shadow:0 2px 8px rgba(124,58,237,.25)!important}'
 	].join('\n');
 	document.head.appendChild(s);
-	/* 同步标记已有 tab，避免异步延迟导致闪烁 */
-	var tabs=document.querySelectorAll('ul.tabs');
-	for(var i=0;i<tabs.length;i++) tabs[i].classList.add('ec-ready');
+	/* MutationObserver: tab 插入 DOM 时立即标记 ec-ready，浏览器 repaint 前完成 */
+	function markReady(n){if(n.nodeType!==1)return;if(n.tagName==='UL'&&n.classList.contains('tabs'))n.classList.add('ec-ready');var q=n.querySelectorAll?n.querySelectorAll('ul.tabs'):[];for(var i=0;i<q.length;i++)q[i].classList.add('ec-ready')}
+	var obs=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){var nn=muts[i].addedNodes;for(var j=0;j<nn.length;j++)markReady(nn[j])}});
+	obs.observe(document.documentElement,{childList:true,subtree:true});
+	markReady(document.documentElement);
 })();
 
 /* ── 页面头部组件 ── */
