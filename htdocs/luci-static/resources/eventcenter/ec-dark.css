@@ -38,13 +38,13 @@
 .ec-dark .ec-svc-status{color:#94a3b8!important}
 
 /* ── 概览页 — 事件 ── */
-.ec-dark .ec-event{background:#252536!important;border-color:#2a2a3d!important}
+.ec-dark .ec-event{background:transparent!important}
 .ec-dark .ec-event-title{color:#e2e8f0!important}
 .ec-dark .ec-event-desc{color:#94a3b8!important}
 .ec-dark .ec-event-time{color:#94a3b8!important}
 
 /* ── 概览页 — 设备 ── */
-.ec-dark .ec-device{background:#252536!important;border-color:#2a2a3d!important}
+.ec-dark .ec-device{background:transparent!important}
 .ec-dark .ec-device-mac{color:#e2e8f0!important}
 .ec-dark .ec-device-ip{color:#94a3b8!important}
 
