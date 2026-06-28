@@ -100,7 +100,7 @@ return view.extend({
 		var eventsCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'最近事件'),E('a',{'class':'ec-card-link',href:'/cgi-bin/luci/admin/services/eventcenter/logs'},'查看全部')]),E('div',{'class':'ec-card-body'},evItems)]);
 
 		var devItems=deviceLines.length>0?deviceLines.map(function(l){var p=l.split('\t');return E('div',{'class':'ec-device'},[E('span',{'class':'ec-device-mac'},p[0]||'未知'),E('span',{'class':'ec-device-ip'},p[1]||'N/A'),E('span',{'class':'ec-device-status',style:'background:#d1fae5;color:#047857'},'● 在线')]);}) : [E('div',{style:'text-align:center;padding:20px;color:#9ca3af;font-size:.82em'},'暂无设备')];
-		var deviceCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'设备监控'),E('span',{style:'font-size:.75em;color:#9ca3af'},'共 '+deviceLines.length+' 台')]),E('div',{'class':'ec-card-body',style:'max-height:320px;overflow-y:auto;padding-right:4px'},devItems)]);
+		var deviceCard=E('div',{'class':'ec-card'},[E('div',{'class':'ec-card-header'},[E('div',{'class':'ec-card-title'},'设备监控'),E('span',{style:'font-size:.75em;color:#9ca3af'},'共 '+deviceLines.length+' 台')]),E('div',{'class':'ec-card-body',style:'max-height:480px;overflow-y:auto;padding-right:4px'},devItems)]);
 
 		var footer=E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理');
 
