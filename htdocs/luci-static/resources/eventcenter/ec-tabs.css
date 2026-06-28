@@ -1,0 +1,47 @@
+/* EventCenter Tab 样式覆盖 — 静态加载，零闪现 */
+ul.tabs {
+  display: flex !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  margin: 0 0 16px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  flex-wrap: wrap !important;
+  border-radius: 0 !important;
+}
+ul.tabs::before {
+  display: none !important;
+}
+ul.tabs > li {
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+ul.tabs > li > a {
+  display: inline-block !important;
+  padding: 10px 22px !important;
+  font-size: .88em !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  text-decoration: none !important;
+  transition: all .15s !important;
+  border-radius: 20px !important;
+  background: #f3f4f6 !important;
+  border: 1px solid transparent !important;
+}
+ul.tabs > li > a:hover {
+  color: #7c3aed !important;
+  background: #ede9fe !important;
+}
+ul.tabs > li.active > a,
+ul.tabs > li[class~="active"] > a {
+  color: #fff !important;
+  background: #7c3aed !important;
+  font-weight: 600 !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, .25) !important;
+}

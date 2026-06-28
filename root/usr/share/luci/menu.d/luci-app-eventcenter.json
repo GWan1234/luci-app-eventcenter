@@ -9,6 +9,7 @@
 	"admin/services/eventcenter/overview": {
 		"title": "概览",
 		"order": 10,
+		"css": "eventcenter/ec-tabs.css",
 		"action": {
 			"type": "view",
 			"path": "eventcenter/overview"
@@ -17,6 +18,7 @@
 	"admin/services/eventcenter/health": {
 		"title": "节点健康",
 		"order": 15,
+		"css": "eventcenter/ec-tabs.css",
 		"action": {
 			"type": "view",
 			"path": "eventcenter/health"
@@ -25,6 +27,7 @@
 	"admin/services/eventcenter/settings": {
 		"title": "设置",
 		"order": 20,
+		"css": "eventcenter/ec-tabs.css",
 		"action": {
 			"type": "view",
 			"path": "eventcenter/settings"
@@ -33,6 +36,7 @@
 	"admin/services/eventcenter/logs": {
 		"title": "日志",
 		"order": 30,
+		"css": "eventcenter/ec-tabs.css",
 		"action": {
 			"type": "view",
 			"path": "eventcenter/logs"
@@ -41,6 +45,7 @@
 	"admin/services/eventcenter/notify": {
 		"title": "通知渠道",
 		"order": 18,
+		"css": "eventcenter/ec-tabs.css",
 		"action": {
 			"type": "view",
 			"path": "eventcenter/notify"

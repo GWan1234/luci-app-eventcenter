@@ -3,20 +3,7 @@
 'require uci';
 'require dom';
 
-/* ── 统一 Tab 菜单样式（v4 — 纯 CSS 覆盖，消除切换闪现）── */
-;(function(){
-	if(document.getElementById('ec-tab-css-v4'))return;
-	var s=document.createElement('style');s.id='ec-tab-css-v4';
-	s.textContent=[
-		'ul.tabs{display:flex!important;gap:6px!important;padding:0!important;margin:0 0 16px!important;background:transparent!important;border:none!important;box-shadow:none!important;flex-wrap:wrap!important}',
-		'ul.tabs::before{display:none!important}',
-		'ul.tabs>li{margin:0!important;border:none!important;background:transparent!important;border-radius:0!important}',
-		'ul.tabs>li>a{display:inline-block!important;padding:10px 22px!important;font-size:.88em!important;font-weight:500!important;color:#6b7280!important;text-decoration:none!important;transition:all .15s!important;border-radius:20px!important;background:#f3f4f6!important;border:1px solid transparent!important}',
-		'ul.tabs>li>a:hover{color:#7c3aed!important;background:#ede9fe!important}',
-		'ul.tabs>li.active>a,ul.tabs>li[class~="active"]>a{color:#fff!important;background:#7c3aed!important;font-weight:600!important;border-color:#7c3aed!important;box-shadow:0 2px 8px rgba(124,58,237,.25)!important}'
-	].join('\n');
-	document.head.appendChild(s);
-})();
+
 
 /* ── 页面头部组件 ── */
 if(!document.getElementById('ec-hdr-css')){var hs=document.createElement('style');hs.id='ec-hdr-css';hs.textContent='.ec-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:14px}.ec-hdr-left h2{margin:0 0 4px;font-size:1.2em;font-weight:700;color:#1f2937}.ec-hdr-left p{margin:0;font-size:.82em;color:#9ca3af}.ec-hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.ec-hdr-top{display:flex;align-items:center;gap:8px}.ec-hdr-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}.ec-hdr-status{font-size:.82em;font-weight:500;color:#1f2937}.ec-hdr-bottom{display:flex;align-items:center;gap:6px}.ec-hdr-time{font-size:.78em;color:#9ca3af}.ec-hdr-refresh{background:none;border:none;cursor:pointer;font-size:1em;color:#9ca3af;padding:2px;border-radius:4px;transition:all .15s}.ec-hdr-refresh:hover{background:#f3f4f6;color:#374151}';document.head.appendChild(hs)}
