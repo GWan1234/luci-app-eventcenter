@@ -2,6 +2,7 @@
 'require view';
 'require uci';
 'require dom';
+'require fs';
 
 
 
@@ -102,26 +103,22 @@ return view.extend({
                 fieldsEl.appendChild(buildField(f));
             });
 
-            var testBtn;
-            if (ch.id === 'ntfy') {
-                testBtn = E('button', {
-                    'class': 'btn cbi-button-action',
-                    'style': 'padding:6px 16px;border:1.5px solid #7c3aed;border-radius:6px;background:transparent;color:#7c3aed;font-size:.8em;font-weight:600;cursor:pointer',
-                    'click': function() {
-                        this.textContent = '发送中...';
-                        var btn = this;
-                        XHR.get('/cgi-bin/luci/admin/system/eventcenter/test_ntfy', null, function(x, data) {
-                            btn.textContent = data && data.success ? '✅ 成功' : '❌ 失败';
-                            setTimeout(function() { btn.textContent = '发送测试'; }, 2000);
-                        });
-                    }
-                }, ['发送测试']);
-            } else {
-                testBtn = E('button', {
-                    'style': 'padding:6px 16px;border:1.5px solid #d1d5db;border-radius:6px;background:transparent;color:#9ca3af;font-size:.8em;cursor:not-allowed',
-                    'disabled': ''
-                }, ['发送测试']);
-            }
+            // 所有渠道统一用 eventcenter test 测试
+            var testBtn = E('button', {
+                'class': 'cbi-button cbi-button-action',
+                'style': 'padding:6px 16px;border:1.5px solid #7c3aed;border-radius:6px;background:transparent;color:#7c3aed;font-size:.8em;font-weight:600;cursor:pointer',
+                'click': function() {
+                    var btn = this;
+                    btn.textContent = '发送中...'; btn.disabled = true;
+                    fs.exec('/usr/bin/eventcenter', ['test']).then(function(res) {
+                        btn.textContent = (res && res.code === 0) ? '✅ 已发送' : '❌ 失败';
+                        setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+                    }).catch(function() {
+                        btn.textContent = '❌ 失败';
+                        setTimeout(function() { btn.textContent = '发送测试'; btn.disabled = false; }, 2000);
+                    });
+                }
+            }, ['发送测试']);
 
             return E('div', { 'style': 'background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 20px;margin-bottom:12px' }, [
                 E('div', { 'style': 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px' }, [
@@ -166,6 +163,14 @@ return view.extend({
         });
 
         container.appendChild(E('div',{'class':'ec-footer'},'EventCenter v1.0.0 | 让每一次事件，都被及时发现和处理'));
+
+        // 底部操作栏
+        var actionsBar = E('div', { 'class': 'cbi-page-actions' }, [
+            E('button', { 'class': 'cbi-button cbi-button-apply' }, '保存并应用'),
+            E('button', { 'class': 'cbi-button cbi-button-save' }, '保存'),
+            E('button', { 'class': 'cbi-button cbi-button-reset' }, '复位')
+        ]);
+        container.appendChild(actionsBar);
 
         return container;
     },
